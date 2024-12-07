@@ -4,7 +4,6 @@ import { ConnectButton } from "thirdweb/react";
 import { client, wallets } from "@/app/client";
 import { SignOutButton, useUser, SignInButton } from "@clerk/nextjs";
 import { Button } from "./ui/button";
-import ConnectWalletButton from "./connect-wallet-btn";
 
 function PageHeader({
   title,
@@ -22,7 +21,6 @@ function PageHeader({
       </div>
       <div className="flex items-center justify-between space-x-3">
         <ConnectButton client={client} wallets={wallets} />
-        {/* <ConnectWalletButton /> */}
         {!user && (
           <SignInButton forceRedirectUrl={"/dashboard"}>
             <Button>Sign In</Button>
