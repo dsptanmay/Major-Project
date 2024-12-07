@@ -3,10 +3,9 @@ import PageHeader from "@/components/page-header";
 import PageFooter from "@/components/page-footer";
 import React from "react";
 import { useUser } from "@clerk/nextjs";
-import { FileText } from "lucide-react";
 import { useActiveAccount } from "thirdweb/react";
 
-function DashboardPage() {
+function OrganizationDashboardPage() {
   const { user } = useUser();
   const activeAccount = useActiveAccount();
   return (
@@ -17,8 +16,8 @@ function DashboardPage() {
           <h2 className="text-gray-700">
             Welcome, <span className="font-semibold">{user?.username}</span>!
             <br />
-            Here you can access the dashboard functions available to you as a
-            user.
+            Here you can access the dashboard functions available to you as an
+            organization.
           </h2>
           <div className="flex flex-grow items-center">
             <div className="w-container grid w-full max-w-full grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-2">
@@ -51,4 +50,4 @@ function DashboardPage() {
   );
 }
 
-export default DashboardPage;
+export default OrganizationDashboardPage;

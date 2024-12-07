@@ -3,10 +3,9 @@ import PageHeader from "@/components/page-header";
 import PageFooter from "@/components/page-footer";
 import React from "react";
 import { useUser } from "@clerk/nextjs";
-import { FileText } from "lucide-react";
 import { useActiveAccount } from "thirdweb/react";
 
-function DashboardPage() {
+function UserDashboardPage() {
   const { user } = useUser();
   const activeAccount = useActiveAccount();
   return (
@@ -51,4 +50,4 @@ function DashboardPage() {
   );
 }
 
-export default DashboardPage;
+export default UserDashboardPage;
