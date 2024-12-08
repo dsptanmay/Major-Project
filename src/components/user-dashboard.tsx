@@ -43,9 +43,9 @@ function UserDashboardPage() {
   ];
   return (
     <div className="inset-0 flex min-h-screen w-full flex-col items-center justify-between space-y-10 bg-white bg-[linear-gradient(to_right,#80808033_1px,transparent_1px),linear-gradient(to_bottom,#80808033_1px,transparent_1px)] bg-[size:70px_70px]">
-      <PageHeader title="Dashboard" buttonText="Home" buttonUrl="/" />
-      <div className="flex w-full p-5">
-        <div className="flex w-full flex-col space-y-8 border-2 border-black bg-white px-8 py-8">
+      <PageHeader title="Dashboard" />
+      <div className="flex w-full px-5">
+        <div className="flex w-full flex-col space-y-8 border-2 border-black bg-white p-8">
           <h2 className="text-gray-700">
             Welcome, <span className="font-semibold">{user?.username}</span>!
             <br />
