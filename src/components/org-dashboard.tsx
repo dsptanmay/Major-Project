@@ -7,7 +7,6 @@ import Link from "next/link";
 import {
   Eye,
   FileStack,
-  FolderCog,
   MessageSquareDot,
 } from "lucide-react";
 
