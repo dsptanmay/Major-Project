@@ -15,7 +15,7 @@ function PageHeader({
   const { user } = useUser();
 
   return (
-    <div className="flex w-full items-center justify-between rounded-none border-b-[3px] border-border bg-white px-8 py-5 ">
+    <div className="flex w-full items-center justify-between rounded-none border-b-[3px] border-border bg-bg px-8 py-5 ">
       <div className="flex items-center space-x-3">
         <h1 className="text-2xl font-bold">{title}</h1>
       </div>
