@@ -1,15 +1,14 @@
-import Community from "@/sections/community";
-import Features from "@/sections/features";
+import HowItWorks from "@/sections/how-it-works";
 import Header from "@/sections/header";
 import Footer from "@/components/footer";
-import { currentUser } from "@clerk/nextjs/server";
+import Features from "@/sections/features";
 
 export default function Home() {
   return (
     <>
       <Header />
       <Features />
-      <Community />
+      <HowItWorks />
       <Footer />
     </>
   );
