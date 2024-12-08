@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FileKey2, Link2, Wallet } from "lucide-react";
+import { CircleCheck, FileKey2, Link2, Wallet } from "lucide-react";
 import React, { useState } from "react";
 import {
   useActiveAccount,
@@ -258,11 +258,18 @@ function AddRecordsPage() {
           />
           {ipfsLink && !isMinted && (
             <Button type="submit" className="w-full">
-              Mint NFT
+              {isMinting ? "Minting NFT..." : "Mint NFT"}
             </Button>
           )}
         </form>
       </Form>
+      {success && (
+        <Alert className="bg-green-300">
+          <CircleCheck className="h-4 w-4" />
+          <AlertTitle>Success</AlertTitle>
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 }
