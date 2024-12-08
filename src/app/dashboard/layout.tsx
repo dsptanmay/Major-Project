@@ -13,20 +13,9 @@ export default async function DashboardLayout({
 }) {
   const user = await currentUser();
   if (!user) redirect("/sign-in");
-  const role = user?.publicMetadata.role;
+  const role = user.publicMetadata.role;
   if (!role) redirect("/");
 
-  if (role === USER_ROLE)
-    return (
-      <ThirdwebProvider>
-        <UserDashboardPage />
-      </ThirdwebProvider>
-    );
-  if (role === ORG_ROLE)
-    return (
-      <ThirdwebProvider>
-        <OrganizationDashboardPage />
-      </ThirdwebProvider>
-    );
-  // return <ThirdwebProvider>{children}</ThirdwebProvider>;
+  if (role === USER_ROLE) return <UserDashboardPage />;
+  if (role === ORG_ROLE) return <OrganizationDashboardPage />;
 }
