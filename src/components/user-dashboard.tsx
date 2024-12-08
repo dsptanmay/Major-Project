@@ -31,7 +31,7 @@ function UserDashboardPage() {
       title: "Notifications",
       description:
         "See the list of pending requests for access to your documents",
-      url: "/notifications",
+      url: "/user_notifications",
       icon: <MessageSquareDot />,
     },
     {
