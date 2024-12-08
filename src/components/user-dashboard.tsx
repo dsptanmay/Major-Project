@@ -3,34 +3,42 @@ import PageHeader from "@/components/page-header";
 import PageFooter from "@/components/page-footer";
 import React from "react";
 import { useUser } from "@clerk/nextjs";
-import { useActiveAccount } from "thirdweb/react";
 import Link from "next/link";
+import {
+  FileStack,
+  FolderCog,
+  MessageSquareDot,
+  UploadIcon,
+} from "lucide-react";
 
 function UserDashboardPage() {
   const { user } = useUser();
-  const activeAccount = useActiveAccount();
 
   const cards = [
     {
       title: "Upload Document",
       description: "Upload your documents and get them converted to NFTs",
       url: "/upload",
+      icon: <UploadIcon />,
     },
     {
       title: "Records",
       description: "View your added records",
       url: "/records",
+      icon: <FileStack />,
     },
     {
       title: "Notifications",
       description:
         "See the list of pending requests for access to your documents",
       url: "/notifications",
+      icon: <MessageSquareDot />,
     },
     {
       title: "Access Control",
       description: "See the documents which have been granted to organizations",
       url: "/access-control",
+      icon: <FolderCog />,
     },
   ];
   return (
@@ -47,12 +55,16 @@ function UserDashboardPage() {
           <div className="flex items-center">
             <div className="w-container grid w-full max-w-full grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-2">
               {cards.map((card, i) => (
-                <Link href={card.url}>
-                  <div className="flex -translate-x-1 -translate-y-1  flex-col gap-3 border-2 border-border bg-white p-5 shadow-light transition-all duration-200 hover:translate-x-0 hover:translate-y-0 hover:shadow-none active:translate-x-0 active:translate-y-0">
-                    <h4 className="text-xl font-heading" key={i}>
-                      {card.title}
-                    </h4>
-                    <p>{card.description}</p>
+                <Link href={card.url} key={i}>
+                  <div
+                    className="flex -translate-x-1 -translate-y-1 items-center space-x-5 border-2 border-border bg-white px-5 py-5 shadow-light transition-all duration-200 hover:translate-x-0 hover:translate-y-0 hover:shadow-none active:translate-x-0 active:translate-y-0"
+                    key={i}
+                  >
+                    {card.icon}
+                    <div>
+                      <h4 className="text-xl font-heading">{card.title}</h4>
+                      <p>{card.description}</p>
+                    </div>
                   </div>
                 </Link>
               ))}

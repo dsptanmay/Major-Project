@@ -3,14 +3,12 @@ import PageHeader from "@/components/page-header";
 import PageFooter from "@/components/page-footer";
 import React from "react";
 import { useUser } from "@clerk/nextjs";
-import { useActiveAccount } from "thirdweb/react";
 
 function OrganizationDashboardPage() {
   const { user } = useUser();
-  const activeAccount = useActiveAccount();
   return (
     <div className="inset-0 flex min-h-screen w-full flex-col items-center justify-between space-y-10 bg-white bg-[linear-gradient(to_right,#80808033_1px,transparent_1px),linear-gradient(to_bottom,#80808033_1px,transparent_1px)] bg-[size:70px_70px]">
-      <PageHeader title="Dashboard" buttonText="Home" buttonUrl="/" />
+      <PageHeader title="Dashboard" />
       <div className="flex w-full flex-grow p-5">
         <div className="flex w-full flex-grow flex-col space-y-5 border-2 border-black bg-white p-5">
           <h2 className="text-gray-700">
@@ -45,7 +43,7 @@ function OrganizationDashboardPage() {
           </div>
         </div>
       </div>
-      <PageFooter dashboardUrl="/dashboard" />
+      <PageFooter />
     </div>
   );
 }
