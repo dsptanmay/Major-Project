@@ -8,65 +8,39 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Wallet } from "lucide-react";
+import { CircleAlert, Wallet } from "lucide-react";
 import Link from "next/link";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
 
+interface RecordData {
+  title: string;
+  token_id: string;
+  description: string;
+}
+
 function RecordsPageContent() {
+  const [records, setRecords] = useState<RecordData[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const activeAccount = useActiveAccount();
-  const data = [
-    {
-      token_id: 1,
-      title: "Title",
-      description: "description",
-    },
-    {
-      token_id: 1,
-      title: "Title",
-      description: "description",
-    },
-    {
-      token_id: 1,
-      title: "Title",
-      description: "description",
-    },
-    {
-      token_id: 1,
-      title: "Title",
-      description: "description",
-    },
-    {
-      token_id: 1,
-      title: "Title",
-      description: "description",
-    },
-    {
-      token_id: 1,
-      title: "Title",
-      description: "description",
-    },
-    {
-      token_id: 1,
-      title: "Title",
-      description: "description",
-    },
-    {
-      token_id: 1,
-      title: "Title",
-      description: "description",
-    },
-    {
-      token_id: 1,
-      title: "Title",
-      description: "description",
-    },
-    {
-      token_id: 1,
-      title: "Title",
-      description: "description",
-    },
-  ];
+  useEffect(() => {
+    const fetchRecords = async () => {
+      const response = await fetch(
+        `/api/user-files/?userAddress=${activeAccount!.address}`,
+        { method: "GET", headers: { "Content-Type": "application/json" } },
+      );
+      if (response.ok) {
+        const data: RecordData[] = await response.json();
+        setRecords(data);
+      } else if (response.status === 404) {
+        setError("User has no owned NFTs");
+      } else {
+        setError("Failed to fetch records!");
+      }
+    };
+    if (activeAccount) fetchRecords();
+  }, [activeAccount]);
+
   if (!activeAccount)
     return (
       <div>
@@ -86,16 +60,23 @@ function RecordsPageContent() {
         </span>{" "}
         :
       </h2>
+      {error && (
+        <Alert className="bg-red-300">
+          <CircleAlert className="h-4 w-4" />
+          <AlertTitle>An Error Occurred!</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {data.map((record, i) => (
-          <Card key={i}>
+        {records.map((record, i) => (
+          <Card key={i} className="bg-[#fff4e0]">
             <CardHeader>
-              <CardTitle>{record.title}</CardTitle>
+              <CardTitle className="text-gray-800">{record.title}</CardTitle>
               <CardDescription>{record.description}</CardDescription>
             </CardHeader>
             <CardContent>
               <Link href={`/view/${record.token_id}`}>
-                <Button>View Document</Button>
+                <Button className="w-full bg-[#fd9745]">View Document</Button>
               </Link>
             </CardContent>
           </Card>
