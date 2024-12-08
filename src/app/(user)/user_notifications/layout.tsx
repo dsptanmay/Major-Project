@@ -13,4 +13,4 @@ function UserNotificationsPageLayout({ children }: { children: React.ReactNode }
   );
 }
 
-export default UploadPageLayout;
+export default UserNotificationsPageLayout;
