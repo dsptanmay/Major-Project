@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 function PageFooter() {
   const pathName = usePathname();
   return (
-    <div className="flex w-full items-center justify-between border-t-[3px] border-black bg-bg px-8 py-5">
+    <div className="mt-5 flex w-full items-center justify-between border-t-[3px] border-black bg-bg px-8 py-5">
       <div className="flex items-center space-x-3">
         <h1>Made by Batch B7</h1>
       </div>
