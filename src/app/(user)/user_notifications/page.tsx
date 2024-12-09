@@ -10,11 +10,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Wallet } from "lucide-react";
-import React from "react";
+import { AlertCircle, Wallet as WalletIcon } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
 
-const sampleData: RecordData[] = [
+const sampleData: Notification[] = [
   {
     organization_name: "health_organization",
     organization_address: "0x12321214124124",
@@ -23,7 +23,7 @@ const sampleData: RecordData[] = [
   },
 ];
 
-type RecordData = {
+type Notification = {
   organization_name: string;
   organization_address: string;
   token_id: string;
@@ -32,18 +32,47 @@ type RecordData = {
 
 function UserNotificationsPage() {
   const activeAccount = useActiveAccount();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const handleApprove = (record: RecordData) => {
-    console.log(`Token ID: ${record.token_id}`);
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await fetch(
+        `/api/notifications?userAddress=${activeAccount!.address}`,
+        { method: "GET", headers: { "Content-Type": "application/json" } },
+      );
+
+      if (response.ok) {
+        const data: Notification[] = await response.json();
+        setNotifications(data);
+      } else {
+        setNotifications([]);
+      }
+    };
+    if (activeAccount) fetchData();
+  }, [activeAccount]);
+
+  const handleApprove = (notification: Notification) => {
+    console.log(`Token ID: ${notification.token_id}`);
   };
 
   if (!activeAccount)
     return (
       <div className="">
         <Alert className="bg-red-300">
-          <Wallet className="h-4 w-4" />
+          <WalletIcon className="h-4 w-4" />
           <AlertTitle>Missing crypto wallet</AlertTitle>
           <AlertDescription>Please connect your wallet first!</AlertDescription>
+        </Alert>
+      </div>
+    );
+
+  if (notifications.length === 0)
+    return (
+      <div>
+        <Alert className="bg-yellow-200">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>No Notifications</AlertTitle>
+          <AlertDescription>User has no pending notifications</AlertDescription>
         </Alert>
       </div>
     );
@@ -65,17 +94,19 @@ function UserNotificationsPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {[...sampleData, ...sampleData, ...sampleData].map((record, i) => (
+          {notifications.map((notification, i) => (
             <TableRow key={i}>
-              <TableCell>{record.organization_name}</TableCell>
-              <TableCell>{record.organization_address}</TableCell>
-              <TableCell className="text-center">{record.token_id}</TableCell>
-              <TableCell>{record.comments}</TableCell>
+              <TableCell>{notification.organization_name}</TableCell>
+              <TableCell>{`${notification.organization_address.substring(0, 6)}...${notification.organization_address.substring(38)}`}</TableCell>
+              <TableCell className="text-center">
+                {notification.token_id}
+              </TableCell>
+              <TableCell>{notification.comments}</TableCell>
               <TableCell className="flex w-full flex-grow space-x-3">
                 <Button
                   variant="noShadow"
                   className="flex flex-grow bg-green-300 "
-                  onClick={() => handleApprove(record)}
+                  onClick={() => handleApprove(notification)}
                 >
                   Approve
                 </Button>
