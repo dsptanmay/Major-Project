@@ -17,16 +17,46 @@ import {
 } from "@/components/ui/select";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
 export default function RoleSelectionPage() {
   const { toast } = useToast();
   const [role, setRole] = useState<string>("");
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const { user } = useUser();
+  const router = useRouter();
   const handleSubmit = async () => {
     if (!role) {
       toast({
         title: "Error",
         description: "No role selected!",
+      });
+    }
+    try {
+      const response = await fetch("/api/role", {
+        method: "POST",
+        body: JSON.stringify({ role, user_id: user?.id }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        toast({ title: "Success", description: "Role set successfully!" });
+        router.push("/dashboard");
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to set role. Please try again!",
+        });
+      }
+    } catch (err) {
+      setIsProcessing(false);
+      toast({
+        title: "Error",
+        description: "An error occurred while setting your role!",
       });
     }
   };
