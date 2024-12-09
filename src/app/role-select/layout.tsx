@@ -12,7 +12,7 @@ export default async function RoleSelectionLayout({
   const user = await currentUser();
   if (!user) redirect("/sign-in");
   const role = user.publicMetadata.role;
-  // if (role === USER_ROLE || role === ORG_ROLE) redirect("/dashboard");
+  if (role === USER_ROLE || role === ORG_ROLE) redirect("/dashboard");
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-between border-2 border-border bg-white bg-[radial-gradient(#80808080_1px,transparent_1px)] shadow-light [background-size:16px_16px]">
       <PageHeader title="Role Selection" />
