@@ -181,11 +181,11 @@ function AddRecordsPage() {
   }
   if (!activeAccount)
     return (
-      <div className="w-full max-w-6xl">
+      <div className="">
         <Alert className="bg-red-300">
           <Wallet className="h-4 w-4" />
           <AlertTitle>Missing Crypto Wallet</AlertTitle>
-          <AlertDescription>Please connect your wallet first</AlertDescription>
+          <AlertDescription>Please connect your wallet first!</AlertDescription>
         </Alert>
       </div>
     );
