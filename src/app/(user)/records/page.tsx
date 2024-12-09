@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CircleAlert, Wallet } from "lucide-react";
+import { CircleAlert, Library, Wallet } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
@@ -34,6 +34,7 @@ function RecordsPageContent() {
         setRecords(data);
       } else if (response.status === 404) {
         setError("User has no owned NFTs");
+        setRecords([]);
       } else {
         setError("Failed to fetch records!");
       }
@@ -48,6 +49,17 @@ function RecordsPageContent() {
           <Wallet className="h-4 w-4" />
           <AlertTitle>Missing Crypto Wallet</AlertTitle>
           <AlertDescription>Please connect your wallet first!</AlertDescription>
+        </Alert>
+      </div>
+    );
+
+  if (records.length === 0)
+    return (
+      <div>
+        <Alert className="bg-yellow-200">
+          <Library className="h-4 w-4" />
+          <AlertTitle>Missing Records</AlertTitle>
+          <AlertDescription>No records found for user!</AlertDescription>
         </Alert>
       </div>
     );
