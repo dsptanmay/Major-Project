@@ -47,10 +47,18 @@ export default function RoleSelectionPage() {
         toast({ title: "Success", description: "Role set successfully!" });
         router.push("/dashboard");
       } else {
-        toast({
-          title: "Error",
-          description: "Failed to set role. Please try again!",
-        });
+        if (response.status === 409) {
+          toast({
+            title: "Role already assigned",
+            description: "User already has a role!",
+          });
+          setTimeout(() => {}, 2000);
+          router.push("/dashboard");
+        }
+        // toast({
+        //   title: "Error",
+        //   description: "Failed to set role. Please try again!",
+        // });
       }
     } catch (err) {
       setIsProcessing(false);
