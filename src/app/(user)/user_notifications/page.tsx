@@ -18,8 +18,11 @@ function UserNotificationsPage() {
       </div>
     );
   return (
-    <div className="flex w-full max-w-5xl flex-col space-y-5 border-[3px] border-border bg-white p-5 shadow-dark">
-      <h2>Notifications for </h2>
+    <div className="flex w-full max-w-6xl flex-col space-y-5 border-[3px] border-border bg-white p-5 shadow-dark">
+      <h2>
+        Notifications for{" "}
+        <code>{`${activeAccount.address.substring(0, 6)}...${activeAccount.address.substring(38)}:`}</code>
+      </h2>
     </div>
   );
 }
