@@ -15,7 +15,8 @@ function PageHeader({ title }: { title: string }) {
         <h1 className="text-2xl font-bold">{title}</h1>
       </div>
       <div className="flex items-center justify-between space-x-3">
-        {pathName.endsWith("/dashboard") ? (
+        {pathName.endsWith("/dashboard") ||
+        pathName.endsWith("/role-select") ? (
           <></>
         ) : (
           <ConnectButton
