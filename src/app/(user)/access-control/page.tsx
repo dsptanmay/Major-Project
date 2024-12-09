@@ -1,4 +1,5 @@
 "use client";
+import { contract } from "@/app/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,9 +11,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
 import { CircleAlert, Wallet } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { useActiveAccount } from "thirdweb/react";
+import { prepareContractCall } from "thirdweb";
+import { useActiveAccount, useSendTransaction } from "thirdweb/react";
 
 type RecordData = {
   organization_name: string;
@@ -22,7 +26,9 @@ type RecordData = {
 };
 
 function AccessControlPage() {
+  const { toast } = useToast();
   const activeAccount = useActiveAccount();
+  const { mutate: sendTransaction } = useSendTransaction();
   const [records, setRecords] = useState<RecordData[]>([]);
 
   useEffect(() => {
@@ -44,7 +50,37 @@ function AccessControlPage() {
     if (activeAccount) fetchData();
   }, [activeAccount]);
 
-  const revokeAccess = async (record: RecordData) => {};
+  const handleRevokeAccess = async (record: RecordData) => {
+    try {
+      const transaction = prepareContractCall({
+        contract,
+        method: "function revokeAccess(uint256 tokenId, address user)",
+        params: [BigInt(record.token_id), record.organization_address],
+      });
+      sendTransaction(transaction);
+      const response = await fetch(
+        `/api/access?orgName=${record.organization_name}&tokenId=${record.token_id}`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: `Successfully revoked access for token id ${record.token_id}`,
+        });
+        setRecords((prev) => prev.filter((n) => n != record));
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to revoke access for record",
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
   if (!activeAccount)
     return (
       <div>
@@ -101,7 +137,7 @@ function AccessControlPage() {
                 <Button
                   className="flex flex-grow bg-red-300"
                   variant="noShadow"
-                  onChange={() => revokeAccess(record)}
+                  onChange={() => handleRevokeAccess(record)}
                 >
                   Revoke Access
                 </Button>
@@ -110,6 +146,7 @@ function AccessControlPage() {
           ))}
         </TableBody>
       </Table>
+      <Toaster />
     </div>
   );
 }
