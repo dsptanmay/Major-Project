@@ -5,7 +5,7 @@ export const maxDuration = 10;
 
 import { db } from "@/db/drizzle";
 import { userNFTsTable } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -31,6 +31,37 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(userRecords, { status: 200 });
   } catch (error) {
     console.error(error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const userData = await request.json();
+    const { token_id, user_address, title, description } = userData;
+    if (!token_id || !user_address || !title || !description)
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
+
+    const newRecord = await db
+      .insert(userNFTsTable)
+      .values({ token_id, user_address, title, description })
+      .returning();
+
+    if (newRecord.length === 0)
+      return NextResponse.json(
+        { error: "Failed to insert data" },
+        { status: 401 },
+      );
+
+    return NextResponse.json(newRecord[0], { status: 201 });
+  } catch (err) {
+    console.error(err);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },
