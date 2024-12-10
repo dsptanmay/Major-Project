@@ -26,7 +26,7 @@ function Features() {
   ];
   return (
     <div className="flex min-h-[60dvh] w-full flex-grow flex-col items-center justify-center space-y-20 border-t-[3px] border-t-border bg-white bg-[radial-gradient(#80808080_1px,transparent_1px)] px-10 py-20 [background-size:16px_16px] ">
-      <h1 className="text-4xl font-bold">Features</h1>
+      <h1 className="text-4xl font-bold">Key Features</h1>
       <div className="flex space-x-10">
         {features.map((feature, i) => (
           <Card
