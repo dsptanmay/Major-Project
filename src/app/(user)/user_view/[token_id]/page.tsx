@@ -1,10 +1,8 @@
 "use client";
-import { contract } from "@/app/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Wallet } from "lucide-react";
+import { AlertCircle, Wallet } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { readContract } from "thirdweb";
 import { useActiveAccount } from "thirdweb/react";
 
 function UserViewPage({ params }: { params: { token_id: string } }) {
@@ -57,6 +55,19 @@ function UserViewPage({ params }: { params: { token_id: string } }) {
           <Wallet className="h-4 w-4" />
           <AlertTitle>Missing Wallet</AlertTitle>
           <AlertDescription>Please connect your wallet first!</AlertDescription>
+        </Alert>
+      </div>
+    );
+
+  if (!ipfsURL || !encryptionKey)
+    return (
+      <div>
+        <Alert className="bg-red-400">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Unauthorized Viewer</AlertTitle>
+          <AlertDescription>
+            You are not authorized to view this document!
+          </AlertDescription>
         </Alert>
       </div>
     );
