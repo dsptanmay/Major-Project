@@ -9,27 +9,47 @@ import { useActiveAccount } from "thirdweb/react";
 
 function UserViewPage({ params }: { params: { token_id: string } }) {
   const [isFetched, setIsFetched] = useState<boolean>(false);
-  const [ipfsURL, setIpfsURL] = useState("");
+  const [ipfsURL, setIpfsURL] = useState<string | null>(null);
+  const [encryptionKey, setEncryptionKey] = useState<string | null>(null);
   const activeAccount = useActiveAccount();
   const tokenId = params.token_id;
 
   useEffect(() => {
-    const fetchData = async (token_id: bigint, caller: string) => {
-      const _uri = await readContract({
-        contract,
-        method:
-          "function getIPFSHash(uint256 tokenId, address caller) view returns (string)",
-        params: [token_id, caller],
+    const fetchHash = async () => {
+      const ipfsResponse = await fetch(
+        `/api/ipfs?userAddress=${activeAccount!.address}&tokenId=${tokenId}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+
+      const tokenResponse = await fetch(`/api/tokens?tokenId=${tokenId}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
       });
-      if (_uri) {
+
+      if (ipfsResponse.ok) {
+        const ipfsHash: string = await ipfsResponse.json();
         setIpfsURL(
-          `https://${process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID}.ipfscdn.io/ipfs/${_uri.substring(7)}`,
+          `https://${process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID}.ipfscdn.io/ipfs/${ipfsHash.substring(7)}`,
         );
-        setIsFetched(true);
+      } else {
+        setIpfsURL(null);
+        return;
       }
+
+      if (tokenResponse.ok) {
+        const data = await tokenResponse.json();
+        setEncryptionKey(data);
+      } else {
+        setEncryptionKey(null);
+      }
+      setIsFetched(true);
     };
-    if (activeAccount) fetchData(BigInt(tokenId), activeAccount.address);
-  }, [activeAccount, isFetched, tokenId]);
+    if (activeAccount) fetchHash();
+  }, [activeAccount, tokenId, isFetched, ipfsURL]);
+
   if (!activeAccount)
     return (
       <div>
