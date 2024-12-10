@@ -1,6 +1,5 @@
-import { ThirdwebProvider } from "thirdweb/react";
 import React from "react";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import UserDashboardPage from "@/components/user-dashboard";
 import OrganizationDashboardPage from "@/components/org-dashboard";

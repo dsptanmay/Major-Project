@@ -52,7 +52,7 @@ export default function RoleSelectionPage() {
             title: "Role already assigned",
             description: "User already has a role!",
           });
-          setTimeout(() => {}, 2000);
+          // setTimeout(() => {}, 2000);
           router.push("/dashboard");
         }
         // toast({
