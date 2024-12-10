@@ -9,6 +9,10 @@ function UserViewPage({ params }: { params: { token_id: string } }) {
   const [isFetched, setIsFetched] = useState<boolean>(false);
   const [ipfsURL, setIpfsURL] = useState<string | null>(null);
   const [decryptionKey, setDecryptionKey] = useState<string | null>(null);
+  const [isDecrypting, setIsDecrypting] = useState<boolean>(false);
+  const [pdfUrl, setPDFUrl] = useState("");
+  const [documentName, setDocumentName] = useState("");
+
   const activeAccount = useActiveAccount();
   const tokenId = params.token_id;
 
@@ -114,6 +118,22 @@ function UserViewPage({ params }: { params: { token_id: string } }) {
         "Decryption failed: " +
           (err instanceof Error ? err.message : "Unknown error"),
       );
+    }
+  };
+
+  const handleDecryptPdf = async () => {
+    try {
+      setIsDecrypting(true);
+      const { pdfUrl, originalName } = await decryptPDF(
+        ipfsURL!,
+        decryptionKey!,
+      );
+      setPDFUrl(pdfUrl);
+      setDocumentName(originalName);
+      setIsDecrypting(false);
+    } catch (error) {
+      console.error(error);
+      setIsDecrypting(false);
     }
   };
 
