@@ -99,7 +99,7 @@ function AccessControlPage() {
           <CircleAlert className="h-4 w-4" />
           <AlertTitle>No Records</AlertTitle>
           <AlertDescription>
-            No Records found for current user!
+            No records found for current user!
           </AlertDescription>
         </Alert>
       </div>
