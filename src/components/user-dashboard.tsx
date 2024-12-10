@@ -55,7 +55,7 @@ function UserDashboardPage() {
           <div className="flex items-center">
             <div className="w-container grid w-full max-w-full grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-2">
               {cards.map((card, i) => (
-                <Link href={card.url} key={i}>
+                <Link href={card.url} key={i} prefetch={true}>
                   <div
                     className="flex -translate-x-1 -translate-y-1 items-center space-x-5 border-2 border-border bg-white px-5 py-5 shadow-light transition-all duration-200 hover:translate-x-0 hover:translate-y-0 hover:shadow-none active:translate-x-0 active:translate-y-0"
                     key={i}
