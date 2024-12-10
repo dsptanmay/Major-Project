@@ -32,3 +32,33 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function GET(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const tokenId = searchParams.get("tokenId");
+    if (!tokenId)
+      return NextResponse.json({ error: "Missing Token ID" }, { status: 400 });
+
+    const data = await db.query.tokenEncryptions.findFirst({
+      where: (record, { eq }) => eq(record.token_id, tokenId),
+      columns: {
+        token_id: false,
+        encryption_key: true,
+      },
+    });
+
+    if (!data)
+      return NextResponse.json(
+        { error: "Token ID not found" },
+        { status: 404 },
+      );
+    else return NextResponse.json(data, { status: 200 });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
+  }
+}
