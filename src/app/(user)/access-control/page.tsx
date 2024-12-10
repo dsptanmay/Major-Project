@@ -137,7 +137,7 @@ function AccessControlPage() {
                 <Button
                   className="flex flex-grow bg-red-300"
                   variant="noShadow"
-                  onChange={() => handleRevokeAccess(record)}
+                  onClick={() => handleRevokeAccess(record)}
                 >
                   Revoke Access
                 </Button>
