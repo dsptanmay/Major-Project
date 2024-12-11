@@ -1,3 +1,8 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "only-no-store";
+export const maxDuration = 10;
+
 import { contract } from "@/app/client";
 import { NextRequest, NextResponse } from "next/server";
 import { readContract } from "thirdweb";
