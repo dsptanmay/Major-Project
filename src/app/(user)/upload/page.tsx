@@ -84,7 +84,6 @@ function AddRecordsPage() {
 
       const fileBuffer = await file.arrayBuffer();
       const uint8Array = new Uint8Array(fileBuffer);
-
       const key = forge.random.getBytesSync(32); // 256-bit key
       const iv = forge.random.getBytesSync(16); // 128-bit IV for AES-CBC
       const cipher = forge.cipher.createCipher("AES-CBC", key);

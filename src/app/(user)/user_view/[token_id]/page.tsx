@@ -2,7 +2,7 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Wallet } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
 
 function UserViewPage({ params }: { params: { token_id: string } }) {
@@ -12,6 +12,8 @@ function UserViewPage({ params }: { params: { token_id: string } }) {
   const [isDecrypting, setIsDecrypting] = useState<boolean>(false);
   const [pdfUrl, setPDFUrl] = useState("");
   const [documentName, setDocumentName] = useState("");
+
+  const pdfViewerRef = useRef<HTMLIFrameElement>(null);
 
   const activeAccount = useActiveAccount();
   const tokenId = params.token_id;
@@ -33,6 +35,7 @@ function UserViewPage({ params }: { params: { token_id: string } }) {
 
       if (ipfsResponse.ok) {
         const ipfsHash: string = await ipfsResponse.json();
+        // console.log(ipfsHash);
         setIpfsURL(
           `https://${process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID}.ipfscdn.io/ipfs/${ipfsHash.substring(7)}`,
         );
@@ -42,10 +45,13 @@ function UserViewPage({ params }: { params: { token_id: string } }) {
       }
 
       if (tokenResponse.ok) {
-        const data = await tokenResponse.json();
-        setDecryptionKey(data);
+        const tokenData: { encryption_key: string } =
+          await tokenResponse.json();
+        // console.log(tokenData);
+        setDecryptionKey(tokenData.encryption_key);
       } else {
         setDecryptionKey(null);
+        return;
       }
       setIsFetched(true);
     };
@@ -54,7 +60,7 @@ function UserViewPage({ params }: { params: { token_id: string } }) {
 
   const decryptPDF = async (
     url: string,
-    decryptionKey: string,
+    decryption_key: string,
   ): Promise<{ pdfUrl: string; originalName: string }> => {
     try {
       const forge = await import("node-forge");
@@ -73,11 +79,11 @@ function UserViewPage({ params }: { params: { token_id: string } }) {
         throw new Error("Invalid file formatting!");
       }
 
-      if (decryptionKey.length === 0)
+      if (decryption_key.length === 0)
         throw new Error("Decryption Key is empty!");
 
       try {
-        const keyBytes = forge.util.hexToBytes(decryptionKey);
+        const keyBytes = forge.util.hexToBytes(decryption_key);
         const ivBytes = forge.util.hexToBytes(encryptedData.iv);
         const encryptedBytes = forge.util.hexToBytes(
           encryptedData.encryptedContent,
@@ -122,15 +128,18 @@ function UserViewPage({ params }: { params: { token_id: string } }) {
   };
 
   const handleDecryptPdf = async () => {
+    console.log(decryptionKey);
     try {
       setIsDecrypting(true);
-      const { pdfUrl, originalName } = await decryptPDF(
-        ipfsURL!,
-        decryptionKey!,
-      );
-      setPDFUrl(pdfUrl);
-      setDocumentName(originalName);
-      setIsDecrypting(false);
+      if (ipfsURL && decryptionKey) {
+        const { pdfUrl, originalName } = await decryptPDF(
+          ipfsURL,
+          decryptionKey,
+        );
+        setPDFUrl(pdfUrl);
+        setDocumentName(originalName);
+        setIsDecrypting(false);
+      }
     } catch (error) {
       console.error(error);
       setIsDecrypting(false);
@@ -167,6 +176,16 @@ function UserViewPage({ params }: { params: { token_id: string } }) {
         <Button className="w-full" onClick={handleDecryptPdf}>
           {isDecrypting ? "Decrypting Document..." : "Decrypt Document"}
         </Button>
+      )}
+      {pdfUrl && (
+        <iframe
+          ref={pdfViewerRef}
+          src={pdfUrl}
+          width="100%"
+          height="600px"
+          title={documentName}
+          className="border-none"
+        />
       )}
     </div>
   );
