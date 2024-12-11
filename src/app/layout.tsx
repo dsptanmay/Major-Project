@@ -6,7 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 const dmSans = DM_Sans({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Neobrutalism Saas template",
+  title: "NFT Based Health Records",
 };
 
 export default function RootLayout({
