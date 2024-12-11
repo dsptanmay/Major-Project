@@ -23,6 +23,7 @@ type Notification = {
   org_address: string;
   nft_token_id: string;
   comments: string;
+  status: "pending" | "approved" | "denied";
 };
 
 function UserNotificationsPage() {
@@ -80,6 +81,10 @@ function UserNotificationsPage() {
 
       if (notifResponse.ok && grantResponse.ok) {
         setNotifications((prev) => prev.filter((n) => n != notification));
+        toast({
+          title: "Success",
+          description: "Successfully approved request",
+        });
       } else {
         toast({
           title: "Error",
@@ -90,7 +95,33 @@ function UserNotificationsPage() {
       console.error("Error in granting access:", err);
     }
   };
-  const handleDeny = async (notification: Notification) => {};
+  const handleDeny = async (notification: Notification) => {
+    try {
+      const response = await fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          org_address: notification.org_address,
+          user_address: activeAccount!.address,
+          token_id: notification.nft_token_id,
+          status: "denied",
+        }),
+      });
+
+      if (response.ok) {
+        setNotifications((prevNotifs) =>
+          prevNotifs.filter((n) => n != notification),
+        );
+        toast({
+          title: "Success",
+          description: "Request denied successfully!",
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Error", description: "Failed to deny request" });
+    }
+  };
 
   if (!activeAccount)
     return (
@@ -131,32 +162,35 @@ function UserNotificationsPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {notifications.map((notification, i) => (
-            <TableRow key={i}>
-              <TableCell>{notification.org_name}</TableCell>
-              <TableCell>{`${notification.org_address.substring(0, 6)}...${notification.org_address.substring(38)}`}</TableCell>
-              <TableCell className="text-center">
-                {notification.nft_token_id}
-              </TableCell>
-              <TableCell>{notification.comments}</TableCell>
-              <TableCell className="flex w-full flex-grow space-x-3">
-                <Button
-                  variant="noShadow"
-                  className="flex flex-grow bg-green-300 "
-                  onClick={() => handleApprove(notification)}
-                >
-                  Approve
-                </Button>
-                <Button
-                  variant="noShadow"
-                  className="flex flex-grow bg-red-300"
-                  onClick={() => handleDeny(notification)}
-                >
-                  Deny
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
+          {notifications.map(
+            (notification, i) =>
+              notification.status === "pending" && (
+                <TableRow key={i}>
+                  <TableCell>{notification.org_name}</TableCell>
+                  <TableCell>{`${notification.org_address.substring(0, 6)}...${notification.org_address.substring(38)}`}</TableCell>
+                  <TableCell className="text-center">
+                    {notification.nft_token_id}
+                  </TableCell>
+                  <TableCell>{notification.comments}</TableCell>
+                  <TableCell className="flex w-full flex-grow space-x-3">
+                    <Button
+                      variant="noShadow"
+                      className="flex flex-grow bg-green-300 "
+                      onClick={() => handleApprove(notification)}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      variant="noShadow"
+                      className="flex flex-grow bg-red-300"
+                      onClick={() => handleDeny(notification)}
+                    >
+                      Deny
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ),
+          )}
         </TableBody>
       </Table>
       <Toaster />
