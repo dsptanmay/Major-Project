@@ -134,12 +134,11 @@ export default function OrgNotificationsPage() {
               </TableCell>
               <TableCell className="flex w-full flex-grow space-x-3">
                 {notification.status === "denied" && (
-                  <Button
-                    variant="noShadow"
-                    className="flex flex-grow bg-red-300"
-                  >
-                    Delete Notification
-                  </Button>
+                  <div className="flex w-full justify-center">
+                    <Button variant="noShadow" className="bg-red-300">
+                      Delete Notification
+                    </Button>
+                  </div>
                 )}
                 {notification.status === "approved" && (
                   <Link
@@ -147,7 +146,7 @@ export default function OrgNotificationsPage() {
                     prefetch={true}
                     className="flex h-full w-full flex-col items-center justify-between"
                   >
-                    <Badge className="bg-orange-400 px-3 py-2 font-semibold text-white">
+                    <Badge className="bg-orange-300 px-3 py-2 font-semibold text-black">
                       View
                     </Badge>
                   </Link>
