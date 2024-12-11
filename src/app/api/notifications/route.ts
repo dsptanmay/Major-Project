@@ -7,27 +7,41 @@ export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
     const userAddress = searchParams.get("userAddress");
-    if (!userAddress)
+    const orgAddress = searchParams.get("orgAddress");
+    if (!userAddress && !orgAddress)
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
       );
 
-    const notifications = await db
-      .select({
-        organization_name: notificationsTable.org_name,
-        organization_address: notificationsTable.org_address,
-        token_id: notificationsTable.nft_token_id,
-        comments: notificationsTable.comments,
-      })
-      .from(notificationsTable)
-      .where(eq(notificationsTable.user_address, userAddress));
+    let notifications;
+    if (userAddress) {
+      notifications = await db
+        .select()
+        .from(notificationsTable)
+        .where(eq(notificationsTable.user_address, userAddress));
+      if (notifications.length === 0)
+        return NextResponse.json(
+          { error: "No notifications found" },
+          { status: 404 },
+        );
 
-    if (notifications.length === 0)
-      return NextResponse.json(
-        { error: "No notifications found" },
-        { status: 404 },
-      );
+      return NextResponse.json(notifications, { status: 200 });
+    }
+    if (orgAddress) {
+      notifications = await db
+        .select()
+        .from(notificationsTable)
+        .where(eq(notificationsTable.org_address, orgAddress));
+
+      if (notifications.length === 0)
+        return NextResponse.json(
+          { error: "No notifications found" },
+          { status: 404 },
+        );
+      return NextResponse.json(notifications, { status: 200 });
+    }
+
     return NextResponse.json(notifications, { status: 200 });
   } catch (err) {
     console.error(err);
