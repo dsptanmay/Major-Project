@@ -30,7 +30,12 @@ export async function GET(req: NextRequest) {
     }
     if (orgAddress) {
       notifications = await db
-        .select()
+        .select({
+          user_address: notificationsTable.user_address,
+          token_id: notificationsTable.nft_token_id,
+          comments: notificationsTable.comments,
+          status: notificationsTable.status,
+        })
         .from(notificationsTable)
         .where(eq(notificationsTable.org_address, orgAddress));
 
