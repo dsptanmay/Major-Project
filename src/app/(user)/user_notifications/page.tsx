@@ -1,4 +1,5 @@
 "use client";
+import { contract } from "@/app/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,18 +11,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
 import { AlertCircle, Wallet as WalletIcon } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { useActiveAccount } from "thirdweb/react";
-
-// const sampleData: Notification[] = [
-//   {
-//     organization_name: "health_organization",
-//     organization_address: "0x12321214124124",
-//     token_id: "1",
-//     comments: "Hello There",
-//   },
-// ];
+import { prepareContractCall } from "thirdweb";
+import { useActiveAccount, useSendTransaction } from "thirdweb/react";
 
 type Notification = {
   org_name: string;
@@ -32,6 +27,8 @@ type Notification = {
 
 function UserNotificationsPage() {
   const activeAccount = useActiveAccount();
+  const { toast } = useToast();
+  const { mutate: sendTransaction } = useSendTransaction();
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
@@ -51,10 +48,49 @@ function UserNotificationsPage() {
     if (activeAccount) fetchData();
   }, [activeAccount]);
 
-  const handleApprove = (notification: Notification) => {
-    console.log(`Token ID: ${notification.nft_token_id}`);
+  const handleApprove = async (notification: Notification) => {
+    try {
+      const notifResponse = await fetch("/api/notifications", {
+        method: "PATCH",
+        body: JSON.stringify({
+          org_address: notification.org_address,
+          user_address: activeAccount!.address,
+          token_id: notification.nft_token_id,
+          status: "approved",
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const grantResponse = await fetch("/api/org-files", {
+        method: "POST",
+        body: JSON.stringify({
+          org_name: notification.org_name,
+          token_id: notification.nft_token_id,
+        }),
+      });
+
+      const transaction = prepareContractCall({
+        contract: contract,
+        method: "function grantAccess(uint256 tokenId, address user)",
+        params: [BigInt(notification.nft_token_id), activeAccount!.address],
+      });
+      sendTransaction(transaction);
+
+      if (notifResponse.ok && grantResponse.ok) {
+        setNotifications((prev) => prev.filter((n) => n != notification));
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to approve access for record",
+        });
+      }
+    } catch (err) {
+      console.error("Error in granting access:", err);
+    }
   };
-  const handleDeny = (notification: Notification) => {};
+  const handleDeny = async (notification: Notification) => {};
 
   if (!activeAccount)
     return (
@@ -114,6 +150,7 @@ function UserNotificationsPage() {
                 <Button
                   variant="noShadow"
                   className="flex flex-grow bg-red-300"
+                  onClick={() => handleDeny(notification)}
                 >
                   Deny
                 </Button>
@@ -122,6 +159,7 @@ function UserNotificationsPage() {
           ))}
         </TableBody>
       </Table>
+      <Toaster />
     </div>
   );
 }
