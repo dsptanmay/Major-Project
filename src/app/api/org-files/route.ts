@@ -1,5 +1,10 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "only-no-store";
+export const maxDuration = 10;
+
 import { db } from "@/db/drizzle";
-import { organizationGrantedTokens, userNFTsTable } from "@/db/schema";
+import { organizationGrantedTokens } from "@/db/schema";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {

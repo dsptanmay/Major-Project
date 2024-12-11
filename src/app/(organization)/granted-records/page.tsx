@@ -43,7 +43,7 @@ function GrantedRecordsPage() {
       }
     };
     if (activeAccount) fetchData();
-  });
+  }, [activeAccount]);
 
   const handleViewFile = (tokenId: any) => {
     router.push(`/org_view/${tokenId}`);

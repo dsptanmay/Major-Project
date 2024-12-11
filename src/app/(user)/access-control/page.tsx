@@ -48,7 +48,7 @@ function AccessControlPage() {
       }
     };
     if (activeAccount) fetchData();
-  });
+  }, [activeAccount]);
 
   const handleRevokeAccess = async (record: RecordData) => {
     try {
