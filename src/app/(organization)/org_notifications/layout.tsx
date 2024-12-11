@@ -1,21 +1,19 @@
-import * as React from "react";
-import type { ReactNode } from "react";
-
-import PageHeader from "@/components/page-header";
+"use client";
 import PageFooter from "@/components/page-footer";
+import PageHeader from "@/components/page-header";
+import React from "react";
 
-type LayoutProps = {
-  children: ReactNode;
-};
-
-export default function OrgNotificationsLayout(
-  props: LayoutProps,
-): React.ReactNode {
+function OrgNotificationsLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-between bg-white bg-[radial-gradient(#80808080_1px,transparent_1px)] shadow-light [background-size:16px_16px]">
+    <div
+      className="flex min-h-screen w-full flex-col items-center justify-between bg-white bg-[radial-gradient(#80808080_1px,transparent_1px)] shadow-light [background-size:16px_16px]"
+      suppressHydrationWarning={true}
+    >
       <PageHeader title="Notifications" />
-      {props.children}
+      {children}
       <PageFooter />
     </div>
   );
 }
+
+export default OrgNotificationsLayout;
