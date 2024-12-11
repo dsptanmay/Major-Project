@@ -87,7 +87,7 @@ function RecordsPageContent() {
               <CardDescription>{record.description}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Link href={`/user_view/${record.token_id}`}>
+              <Link href={`/user_view/${record.token_id}`} prefetch={true}>
                 <Button className="w-full bg-[#fd9745]">View Document</Button>
               </Link>
             </CardContent>
