@@ -70,7 +70,7 @@ export default function OrgNotificationsPage() {
       }
     };
     if (activeAccount) fetchData();
-  }, [activeAccount, notifications]);
+  });
   if (!activeAccount) {
     return (
       <div>
