@@ -56,7 +56,7 @@ function UserViewPage({ params }: { params: { token_id: string } }) {
       setIsFetched(true);
     };
     if (activeAccount) fetchHash();
-  }, [activeAccount, tokenId, isFetched, ipfsURL, decryptionKey]);
+  });
 
   const decryptPDF = async (
     url: string,

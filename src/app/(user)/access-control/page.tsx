@@ -48,7 +48,7 @@ function AccessControlPage() {
       }
     };
     if (activeAccount) fetchData();
-  }, [activeAccount]);
+  });
 
   const handleRevokeAccess = async (record: RecordData) => {
     try {
@@ -115,7 +115,7 @@ function AccessControlPage() {
       </h2>
       <Table>
         <TableCaption>
-          A list of documents that you've granted to organizations
+          A list of documents that you have granted to organizations
         </TableCaption>
         <TableHeader>
           <TableRow>

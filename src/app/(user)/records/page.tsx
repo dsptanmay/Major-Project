@@ -40,7 +40,7 @@ function RecordsPageContent() {
       }
     };
     if (activeAccount) fetchRecords();
-  }, [activeAccount]);
+  });
 
   if (!activeAccount)
     return (
