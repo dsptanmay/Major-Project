@@ -2,7 +2,12 @@
 import React, { useEffect, useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Wallet } from "lucide-react";
+import {
+  AlertCircle,
+  ExternalLink,
+  SquareArrowUpRightIcon,
+  Wallet,
+} from "lucide-react";
 import {
   Table,
   TableBody,
@@ -14,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 
 type Notification = {
   user_address: string;
@@ -134,6 +140,17 @@ export default function OrgNotificationsPage() {
                   >
                     Delete Notification
                   </Button>
+                )}
+                {notification.status === "approved" && (
+                  <Link
+                    href={`/org_view/${notification.token_id}`}
+                    prefetch={true}
+                    className="flex h-full w-full flex-col items-center justify-between"
+                  >
+                    <Badge className="bg-orange-400 px-3 py-2 font-semibold text-white">
+                      View
+                    </Badge>
+                  </Link>
                 )}
               </TableCell>
             </TableRow>
