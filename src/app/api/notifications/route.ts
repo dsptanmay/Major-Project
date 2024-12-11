@@ -1,6 +1,6 @@
 import { db } from "@/db/drizzle";
 import { notificationsTable, organizationWalletTable } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -105,6 +105,56 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error creating notification:", error);
 
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
+  }
+}
+
+interface UpdateNotificationRequest {
+  org_address: string;
+  user_address: string;
+  token_id: string;
+  status: "approved" | "denied";
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const body: UpdateNotificationRequest = await request.json();
+    if (
+      !body.org_address ||
+      !body.user_address ||
+      !body.token_id ||
+      !body.status
+    )
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
+    if (body.status !== "approved" && body.status !== "denied")
+      return NextResponse.json({ error: "Invalid status" }, { status: 401 });
+
+    const updatedNotification = await db
+      .update(notificationsTable)
+      .set({ status: body.status })
+      .where(
+        and(
+          eq(notificationsTable.org_address, body.org_address),
+          eq(notificationsTable.user_address, body.user_address),
+          eq(notificationsTable.nft_token_id, body.token_id),
+        ),
+      )
+      .returning();
+
+    if (updatedNotification.length === 0)
+      return NextResponse.json(
+        { error: "Notification not found" },
+        { status: 404 },
+      );
+    return NextResponse.json(updatedNotification, { status: 201 });
+  } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },
