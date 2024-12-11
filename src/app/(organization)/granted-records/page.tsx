@@ -1,6 +1,15 @@
 "use client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Wallet } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { AlertCircle, Wallet } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
@@ -49,6 +58,19 @@ function GrantedRecordsPage() {
         </Alert>
       </div>
     );
+
+  if (orgRecords.length === 0)
+    return (
+      <div>
+        <Alert className="bg-yellow-200">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Missing Records</AlertTitle>
+          <AlertDescription>
+            Organization has no granted documents
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
   return (
     <div className="flex w-full max-w-6xl flex-col space-y-5 rounded-none border-[3px] border-border bg-white p-5 shadow-light">
       <h2>
@@ -58,6 +80,21 @@ function GrantedRecordsPage() {
           {activeAccount.address.substring(38)}`
         </code>
       </h2>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {orgRecords.map((record, i) => (
+          <Card key={i} className="bg-[#fff4e0]">
+            <CardHeader>
+              <CardTitle className="text-gray-800">{record.title}</CardTitle>
+              <CardDescription>{record.description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href={`/org_view/${record.token_id}`} prefetch={true}>
+                <Button className="w-full bg-[#fd9745]">View Document</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
