@@ -46,7 +46,7 @@ function UserNotificationsPage() {
       }
     };
     if (activeAccount) fetchData();
-  }, [activeAccount]);
+  });
 
   const handleApprove = async (notification: Notification) => {
     try {
