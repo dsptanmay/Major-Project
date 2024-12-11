@@ -1,4 +1,6 @@
 import { db } from "@/db/drizzle";
+import { organizationGrantedTokens, userNFTsTable } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -38,6 +40,57 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "No Records Found" }, { status: 404 });
 
     return NextResponse.json(grantedTokens, { status: 200 });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
+  }
+}
+
+interface AccessPostRequest {
+  org_name: string;
+  token_id: string;
+}
+export async function POST(request: NextRequest) {
+  try {
+    const body: AccessPostRequest = await request.json();
+    if (!body.org_name || !body.token_id)
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
+
+    const userData = await db.query.userNFTsTable.findFirst({
+      where: (record, { eq }) => eq(record.token_id, body.token_id),
+    });
+
+    if (!userData)
+      return NextResponse.json(
+        { error: "Token ID not found" },
+        { status: 404 },
+      );
+
+    const title = userData.title;
+    const description = userData.description;
+
+    const newRecord = await db
+      .insert(organizationGrantedTokens)
+      .values({
+        org_name: body.org_name,
+        token_id: body.token_id,
+        title,
+        description,
+      })
+      .returning();
+
+    if (newRecord.length === 0)
+      return NextResponse.json(
+        { error: "Organization already has access to token" },
+        { status: 401 },
+      );
+    return NextResponse.json(newRecord[0], { status: 201 });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
