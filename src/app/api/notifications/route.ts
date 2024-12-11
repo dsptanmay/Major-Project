@@ -161,3 +161,43 @@ export async function PATCH(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const orgAddress = searchParams.get("orgAddress");
+    const userAddress = searchParams.get("userAddress");
+    const tokenId = searchParams.get("tokenId");
+
+    if (!tokenId || !userAddress || !orgAddress)
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
+
+    const deletedNotification = await db
+      .delete(notificationsTable)
+      .where(
+        and(
+          eq(notificationsTable.org_address, orgAddress),
+          eq(notificationsTable.user_address, userAddress),
+          eq(notificationsTable.nft_token_id, tokenId),
+        ),
+      )
+      .returning();
+
+    if (deletedNotification.length === 0)
+      return NextResponse.json(
+        { error: "Failed to delete notification" },
+        { status: 401 },
+      );
+
+    return NextResponse.json({ status: 204 });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
+  }
+}

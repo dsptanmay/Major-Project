@@ -20,6 +20,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { useToast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
 
 type Notification = {
   user_address: string;
@@ -51,6 +53,7 @@ const StatusBadge: React.FC<{ status: Notification["status"] }> = ({
 
 export default function OrgNotificationsPage() {
   const activeAccount = useActiveAccount();
+  const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
@@ -77,6 +80,35 @@ export default function OrgNotificationsPage() {
     };
     if (activeAccount) fetchData();
   }, [activeAccount]);
+
+  const handleDelete = async (notification: Notification) => {
+    try {
+      const response = await fetch(
+        `/api/notifications?orgAddress=${activeAccount!.address}&userAddress=${notification.user_address}&tokenId=${notification.token_id}`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Notification deleted successfully",
+        });
+        setNotifications((prevNotifs) =>
+          prevNotifs.filter((n) => n != notification),
+        );
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed in deleteing notification",
+      });
+      console.error(error);
+    }
+  };
+
   if (!activeAccount) {
     return (
       <div>
@@ -135,7 +167,11 @@ export default function OrgNotificationsPage() {
               <TableCell className="flex w-full flex-grow space-x-3">
                 {notification.status === "denied" && (
                   <div className="flex w-full justify-center">
-                    <Button variant="noShadow" className="bg-red-300">
+                    <Button
+                      variant="noShadow"
+                      className="bg-red-300"
+                      onClick={() => handleDelete(notification)}
+                    >
                       Delete Notification
                     </Button>
                   </div>
@@ -156,6 +192,7 @@ export default function OrgNotificationsPage() {
           ))}
         </TableBody>
       </Table>
+      <Toaster />
     </div>
   );
 }
