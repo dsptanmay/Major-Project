@@ -14,19 +14,19 @@ import { AlertCircle, Wallet as WalletIcon } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
 
-const sampleData: Notification[] = [
-  {
-    organization_name: "health_organization",
-    organization_address: "0x12321214124124",
-    token_id: "1",
-    comments: "Hello There",
-  },
-];
+// const sampleData: Notification[] = [
+//   {
+//     organization_name: "health_organization",
+//     organization_address: "0x12321214124124",
+//     token_id: "1",
+//     comments: "Hello There",
+//   },
+// ];
 
 type Notification = {
-  organization_name: string;
-  organization_address: string;
-  token_id: string;
+  org_name: string;
+  org_address: string;
+  nft_token_id: string;
   comments: string;
 };
 
@@ -52,8 +52,9 @@ function UserNotificationsPage() {
   }, [activeAccount]);
 
   const handleApprove = (notification: Notification) => {
-    console.log(`Token ID: ${notification.token_id}`);
+    console.log(`Token ID: ${notification.nft_token_id}`);
   };
+  const handleDeny = (notification: Notification) => {};
 
   if (!activeAccount)
     return (
@@ -96,10 +97,10 @@ function UserNotificationsPage() {
         <TableBody>
           {notifications.map((notification, i) => (
             <TableRow key={i}>
-              <TableCell>{notification.organization_name}</TableCell>
-              <TableCell>{`${notification.organization_address.substring(0, 6)}...${notification.organization_address.substring(38)}`}</TableCell>
+              <TableCell>{notification.org_name}</TableCell>
+              <TableCell>{`${notification.org_address.substring(0, 6)}...${notification.org_address.substring(38)}`}</TableCell>
               <TableCell className="text-center">
-                {notification.token_id}
+                {notification.nft_token_id}
               </TableCell>
               <TableCell>{notification.comments}</TableCell>
               <TableCell className="flex w-full flex-grow space-x-3">
