@@ -6,7 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 const dmSans = DM_Sans({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Neobrutalism Saas template",
+  title: "NFT Based Health Records",
 };
 
 export default function RootLayout({
@@ -16,7 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning={true}>
         <body className={dmSans.className}>{children}</body>
       </html>
     </ClerkProvider>
