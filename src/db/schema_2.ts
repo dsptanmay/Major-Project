@@ -1,17 +1,19 @@
-import {
-  pgTable,
-  uuid,
-  text,
-  timestamp,
-  boolean,
-  pgEnum,
-} from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, pgEnum } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-export const userRoleEnum = pgEnum("user_role", ["user", "organization"]);
+export const userRoleEnum = pgEnum("user_role", [
+  "user",
+  "medical_organization",
+]);
 export const accessStatusEnum = pgEnum("access_status", [
   "pending",
-  "granted",
+  "approved",
+  "denied",
+]);
+
+export const notificationStatusEnum = pgEnum("notif_status", [
+  "pending",
+  "approved",
   "denied",
 ]);
 
@@ -19,7 +21,7 @@ export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   wallet_address: text("wallet_address").unique().notNull(),
   role: userRoleEnum("role").notNull(),
-  name: text("name"),
+  username: text("username"),
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -29,9 +31,9 @@ export const medicalRecords = pgTable("medical_records", {
     .references(() => users.id)
     .notNull(),
   token_id: text("token_id").unique().notNull(), // NFT token ID
-  ipfs_hash: text("ipfs_hash").notNull(),
-  encrypted_file_key: text("encrypted_file_key").notNull(), // AES key encrypted with user's public key
-  description: text("description"),
+  encryption_key: text("encryption_key").notNull(), // AES key encrypted with user's public key
+  title: text("title").notNull(),
+  description: text("description").notNull(),
   uploaded_at: timestamp("uploaded_at").defaultNow().notNull(),
 });
 
@@ -50,13 +52,14 @@ export const accessRequests = pgTable("access_requests", {
 
 export const notifications = pgTable("notifications", {
   id: uuid("id").primaryKey().defaultRandom(),
+  org_id: uuid("organization_id")
+    .references(() => users.id)
+    .notNull(),
   user_id: uuid("user_id")
     .references(() => users.id)
     .notNull(),
   message: text("message").notNull(),
-  related_record_id: uuid("related_record_id"),
-  related_request_id: uuid("related_request_id"),
-  is_read: boolean("is_read").default(false).notNull(),
+  status: notificationStatusEnum("status").default("pending").notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
