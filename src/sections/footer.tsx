@@ -4,10 +4,10 @@ export default function Footer() {
       Made by Batch B7. The source code is available on{" "}
       <a
         target="_blank"
-        href="https://gitlab.com/dsptanmay/major-project-v2"
+        href="https://github.com/dsptanmay/major-project"
         className="font-heading underline"
       >
-        GitLab
+        GitHub
       </a>
       .
     </footer>
