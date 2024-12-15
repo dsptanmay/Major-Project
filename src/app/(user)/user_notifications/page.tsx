@@ -75,7 +75,7 @@ function UserNotificationsPage() {
       const transaction = prepareContractCall({
         contract: contract,
         method: "function grantAccess(uint256 tokenId, address user)",
-        params: [BigInt(notification.nft_token_id), activeAccount!.address],
+        params: [BigInt(notification.nft_token_id), notification.org_address],
       });
       sendTransaction(transaction);
 
