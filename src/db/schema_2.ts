@@ -46,13 +46,15 @@ export const accessRequests = pgTable("access_requests", {
     .references(() => users.id)
     .notNull(),
   status: accessStatusEnum("status").default("pending").notNull(),
-  comments: text("comments").notNull(),
   requested_at: timestamp("requested_at").defaultNow().notNull(),
   processed_at: timestamp("processed_at"),
 });
 
 export const notifications = pgTable("notifications", {
   id: uuid("id").primaryKey().defaultRandom(),
+  record_id: uuid("record_id")
+    .references(() => medicalRecords.id)
+    .notNull(),
   org_id: uuid("organization_id")
     .references(() => users.id)
     .notNull(),
