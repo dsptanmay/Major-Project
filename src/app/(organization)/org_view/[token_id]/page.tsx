@@ -165,7 +165,7 @@ function OrganizationViewPage({ params }: { params: { token_id: string } }) {
       </div>
     );
   return (
-    <div className="flex w-full max-w-6xl flex-col space-y-5 rounded-none border-[3px] border-border bg-white p-5 shadow-light">
+    <div className="flex w-full max-w-6xl flex-col space-y-5 rounded-base border-[3px] border-border bg-white p-5 shadow-light">
       <h2>Document for Token ID {tokenId}</h2>
       {isFetched && (
         <Button className="w-full" onClick={handleDecryptPdf}>

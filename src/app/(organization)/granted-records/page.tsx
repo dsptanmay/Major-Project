@@ -72,7 +72,7 @@ function GrantedRecordsPage() {
       </div>
     );
   return (
-    <div className="flex w-full max-w-6xl flex-col space-y-5 rounded-none border-[3px] border-border bg-white p-5 shadow-light">
+    <div className="flex w-full max-w-6xl flex-col space-y-5 rounded-base border-[3px] border-border bg-white p-5 shadow-light">
       <h2>
         Granted documents for{" "}
         <code>
