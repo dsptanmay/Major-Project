@@ -13,7 +13,7 @@ export default async function DashboardLayout({
   const user = await currentUser();
   if (!user) redirect("/sign-in");
   const role = user.publicMetadata.role;
-  if (!role) redirect("/");
+  if (!role) redirect("/role-select");
 
   if (role === USER_ROLE) return <UserDashboardPage />;
   if (role === ORG_ROLE) return <OrganizationDashboardPage />;
