@@ -1,41 +1,32 @@
-import { userRoleEnum } from "@/db/schema_2";
+import { InsertUser, SelectUser } from "@/db/schema_2";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
-type CreateUserInput = {
-  wallet_address: string;
-  role: (typeof userRoleEnum.enumValues)[number];
-  username: string;
-  user_id: string;
-};
-
-type User = {
-  id: string;
-  wallet_address: string;
-  role: (typeof userRoleEnum.enumValues)[number];
-  username: string;
-  created_at: string;
-};
+type InsertUserData = { clerk_user_id: string } & InsertUser;
 
 export const useCreateUser = () => {
-  return useMutation<User, Error, CreateUserInput>({
-    mutationFn: (newUser) => {
-      const { data } = axios
-        .post("/api/test/users", newUser)
-        .then((res) => res.data);
+  return useMutation<
+    SelectUser,
+    Error,
+    Omit<InsertUserData, "id" | "created_at">
+  >({
+    mutationFn: async (newUser) => {
+      const response = await axios.post("/api/test/users", newUser);
+      const data: SelectUser = response.data;
       return data;
     },
   });
 };
 
 export const useGetUser = (walletAddress?: string) => {
-  return useQuery<User>({
+  return useQuery<SelectUser, Error>({
     queryKey: ["user", walletAddress],
     queryFn: async () => {
       if (!walletAddress) throw new Error("Wallet Address is required");
-      const { data } = await axios.get(
+      const response = await axios.get(
         `/api/test/users?walletAddress=${walletAddress}`,
       );
+      const data: SelectUser = response.data;
       return data;
     },
   });
