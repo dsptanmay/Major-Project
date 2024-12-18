@@ -21,7 +21,6 @@ export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   wallet_address: text("wallet_address").unique().notNull(),
   role: userRoleEnum("role").notNull(),
-  username: text("username").notNull().unique(),
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
