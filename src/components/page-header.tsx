@@ -5,6 +5,7 @@ import { client, wallets } from "@/app/client";
 import { SignOutButton, useUser, SignInButton } from "@clerk/nextjs";
 import { Button } from "./ui/button";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 
 function PageHeader({ title }: { title: string }) {
   const { user } = useUser();
@@ -15,8 +16,7 @@ function PageHeader({ title }: { title: string }) {
         <h1 className="text-2xl font-bold">{title}</h1>
       </div>
       <div className="flex items-center justify-between space-x-3">
-        {pathName.endsWith("/dashboard") ||
-        pathName.endsWith("/role-select") ? (
+        {pathName.endsWith("/dashboard") ? (
           <></>
         ) : (
           <ConnectButton
@@ -35,7 +35,11 @@ function PageHeader({ title }: { title: string }) {
             <Button>Sign Out</Button>
           </SignOutButton>
         )}
-        {/* <ThemeSwitcher /> */}
+        {user && !pathName.endsWith("/profile") && (
+          <Link href="/profile">
+            <Button>Profile</Button>
+          </Link>
+        )}
       </div>
     </div>
   );
