@@ -96,5 +96,11 @@ export const accessRequestsRelations = relations(accessRequests, ({ one }) => ({
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
 
+export type InsertRecord = typeof medicalRecords.$inferInsert;
+export type SelectRecord = typeof medicalRecords.$inferSelect;
+
+export type InsertRequest = typeof accessRequests.$inferInsert;
+export type SelectRequest = typeof accessRequests.$inferSelect;
+
 export type InsertNotification = typeof notifications.$inferInsert;
 export type SelectNotification = typeof notifications.$inferSelect;
