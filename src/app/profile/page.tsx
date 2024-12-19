@@ -6,12 +6,15 @@ import { useGetUser } from "@/hooks/useUsers";
 import { AlertCircle, Wallet } from "lucide-react";
 import React from "react";
 import { useActiveAccount } from "thirdweb/react";
+import LoadingStateComponent from "@/components/loading-card";
+import { useUser } from "@clerk/nextjs";
 
 function ProfilePage() {
   const activeAccount = useActiveAccount();
+  const { user } = useUser();
   const {
     data: userData,
-    isLoading,
+    status,
     error: userError,
   } = useGetUser(activeAccount?.address);
   const formatTimeSince = (dateString: string) => {
@@ -38,26 +41,27 @@ function ProfilePage() {
     return "just now";
   };
 
-  if (!activeAccount || isLoading)
+  if (!activeAccount)
     return (
       <div>
-        <Alert className="bg-yellow-200">
+        <Alert className="bg-red-300">
           <Wallet className="h-4 w-4" />
-          <AlertTitle>Loading</AlertTitle>
-          <AlertDescription>
-            {!activeAccount ? "Connect your wallet" : "Fetching user data"}
-          </AlertDescription>
+          <AlertTitle>Missing Wallet</AlertTitle>
+          <AlertDescription>Please connect your wallet first</AlertDescription>
         </Alert>
       </div>
     );
 
-  if (!userData)
+  if (status === "pending")
+    return <LoadingStateComponent content="Loading Profile..." />;
+
+  if (status === "error")
     return (
       <div>
-        <Alert className="bg-yellow-200">
+        <Alert className="bg-red-400">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Missing User</AlertTitle>
-          <AlertDescription>User details not found!</AlertDescription>
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>User not found!</AlertDescription>
         </Alert>
       </div>
     );
@@ -67,7 +71,7 @@ function ProfilePage() {
       <Card className="bg-[#fff4e0] shadow-none">
         <CardHeader>
           <CardTitle className="flex flex-col items-center space-y-4 ">
-            <span>{userData.username}</span>
+            <span>{user?.username}</span>
             <Badge className="bg-[#fd9745] text-base font-semibold">
               {userData.role}
             </Badge>
@@ -84,7 +88,7 @@ function ProfilePage() {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-800">Member Since:</span>
-              <span>{formatTimeSince(userData.created_at)}</span>
+              <span>{formatTimeSince(userData.created_at.toString())}</span>
             </div>
           </div>
         </CardContent>
