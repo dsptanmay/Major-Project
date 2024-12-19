@@ -1,7 +1,7 @@
 import React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-function LoadingStateComponent() {
+function LoadingStateComponent({ content }: { content: string }) {
   return (
     <>
       <Skeleton className="flex items-center space-x-5 px-5 py-10 shadow-light">
@@ -21,7 +21,7 @@ function LoadingStateComponent() {
             fill="currentFill"
           />
         </svg>
-        <span className="font-bold">Loading notifications...</span>
+        <span className="font-bold">{content}</span>
       </Skeleton>
     </>
   );
