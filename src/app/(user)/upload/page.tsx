@@ -189,7 +189,7 @@ function AddRecordsPage() {
       </div>
     );
   return (
-    <div className="flex w-full max-w-6xl flex-col space-y-5 rounded-none border-2 border-border bg-white px-10 py-10 shadow-light ">
+    <div className="flex w-full max-w-6xl flex-col space-y-5 rounded-base border-2 border-border bg-white px-10 py-10 shadow-light ">
       <div className="flex w-full flex-col space-y-2">
         <Label
           htmlFor="file-upload-input"

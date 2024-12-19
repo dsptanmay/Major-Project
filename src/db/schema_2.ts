@@ -21,7 +21,6 @@ export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   wallet_address: text("wallet_address").unique().notNull(),
   role: userRoleEnum("role").notNull(),
-  username: text("username"),
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -52,6 +51,9 @@ export const accessRequests = pgTable("access_requests", {
 
 export const notifications = pgTable("notifications", {
   id: uuid("id").primaryKey().defaultRandom(),
+  record_id: uuid("record_id")
+    .references(() => medicalRecords.id)
+    .notNull(),
   org_id: uuid("organization_id")
     .references(() => users.id)
     .notNull(),
@@ -90,3 +92,15 @@ export const accessRequestsRelations = relations(accessRequests, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+export type InsertUser = typeof users.$inferInsert;
+export type SelectUser = typeof users.$inferSelect;
+
+export type InsertRecord = typeof medicalRecords.$inferInsert;
+export type SelectRecord = typeof medicalRecords.$inferSelect;
+
+export type InsertRequest = typeof accessRequests.$inferInsert;
+export type SelectRequest = typeof accessRequests.$inferSelect;
+
+export type InsertNotification = typeof notifications.$inferInsert;
+export type SelectNotification = typeof notifications.$inferSelect;
