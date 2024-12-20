@@ -6,7 +6,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
-type UserNotifications = {
+export type UserNotification = {
   id: string;
   tokenId: string;
   message: string;
@@ -14,7 +14,7 @@ type UserNotifications = {
   orgAddress: string;
 };
 
-type OrgNotifications = {
+export type OrgNotification = {
   id: string;
   tokenId: string;
   message: string;
@@ -23,11 +23,11 @@ type OrgNotifications = {
 };
 
 export const useUserNotifications = (walletAddress?: string) => {
-  return useQuery<UserNotifications[], Error>({
+  return useQuery<UserNotification[], Error>({
     queryKey: ["notifications", walletAddress],
     enabled: !!walletAddress,
     queryFn: async () => {
-      const { data } = await axios.get<UserNotifications[]>(
+      const { data } = await axios.get<UserNotification[]>(
         `/api/test/notifications?walletAddress=${walletAddress}`,
       );
       return data;
@@ -36,11 +36,11 @@ export const useUserNotifications = (walletAddress?: string) => {
 };
 
 export const useOrgNotifications = (walletAddress?: string) => {
-  return useQuery<OrgNotifications[], Error>({
+  return useQuery<OrgNotification[], Error>({
     queryKey: ["notifications", walletAddress],
     enabled: !!walletAddress,
     queryFn: async () => {
-      const { data } = await axios.get<OrgNotifications[]>(
+      const { data } = await axios.get<OrgNotification[]>(
         `/api/test/notifications?walletAddress=${walletAddress}`,
       );
       return data;
@@ -56,7 +56,7 @@ export const useCreateNotification = () => {
       const data: SelectNotification = response.data;
       return data;
     },
-    onMutate: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
@@ -64,6 +64,7 @@ export const useCreateNotification = () => {
 
 type UpdateNotificationData = {
   notification_id: string;
+  orgAddress: string;
   status: "approved" | "denied";
 };
 
@@ -75,8 +76,11 @@ export const useUpdateNotification = () => {
       const data: SelectNotification = response.data;
       return data;
     },
-    onSettled: () => {
-      queryClient.refetchQueries({ queryKey: ["notifications"] });
+    onSettled: (data, error, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["notifications", variables.orgAddress],
+        exact: true,
+      });
     },
   });
 };

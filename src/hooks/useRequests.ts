@@ -1,4 +1,4 @@
-import { InsertRequest, SelectRequest } from "@/db/schema_2";
+import { SelectRequest } from "@/db/schema_2";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 

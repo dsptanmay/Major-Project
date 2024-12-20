@@ -3,14 +3,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
 export const useGetRecords = (walletAddress?: string) => {
-  return useQuery<SelectRecord, Error>({
+  return useQuery<SelectRecord[], Error>({
     queryKey: ["records", walletAddress],
     queryFn: async () => {
       if (!walletAddress) throw new Error("Wallet Address is required");
       const response = await axios.get(
         `/api/test/medical-records?walletAddress=${walletAddress}`,
       );
-      const data: SelectRecord = response.data;
+      const data: SelectRecord[] = response.data;
       return data;
     },
     enabled: !!walletAddress,
@@ -33,7 +33,7 @@ export const useCreateRecord = () => {
       const data: SelectRecord = response.data;
       return data;
     },
-    onMutate: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["records"] });
     },
   });
