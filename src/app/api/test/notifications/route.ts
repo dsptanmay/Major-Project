@@ -1,6 +1,6 @@
 import { db } from "@/db/drizzle";
-import { notifications } from "@/db/schema_2";
-import { eq, or } from "drizzle-orm";
+import { medicalRecords, notifications, users } from "@/db/schema_2";
+import { eq, and } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -53,30 +53,59 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const walletAddress = searchParams.get("walletAddress");
+
     if (!walletAddress)
       return NextResponse.json(
         { error: "Missing Wallet Address" },
         { status: 400 },
       );
 
-    const user = await db.query.users.findFirst({
+    const userData = await db.query.users.findFirst({
       where: (record, { eq }) => eq(record.wallet_address, walletAddress),
-      columns: { id: true },
+      columns: { id: true, wallet_address: true, role: true },
     });
-    if (!user)
+    if (!userData)
       return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    const userNotifications = await db
-      .select()
-      .from(notifications)
-      .where(
-        or(
-          eq(notifications.user_id, user.id),
-          eq(notifications.org_id, user.id),
-        ),
-      );
-
-    return NextResponse.json(userNotifications);
+    let result;
+    if (userData.role === "user")
+      result = await db
+        .select({
+          id: notifications.id,
+          tokenId: medicalRecords.token_id,
+          message: notifications.message,
+          orgName: users.username,
+          orgAddress: users.wallet_address,
+        })
+        .from(notifications)
+        .innerJoin(
+          medicalRecords,
+          eq(notifications.record_id, medicalRecords.id),
+        )
+        .innerJoin(users, eq(notifications.org_id, users.id))
+        .where(
+          and(
+            eq(notifications.user_id, userData.id),
+            eq(notifications.status, "pending"),
+          ),
+        );
+    else if (userData.role === "medical_organization")
+      result = await db
+        .select({
+          id: notifications.id,
+          tokenId: medicalRecords.token_id,
+          message: notifications.message,
+          recordTitle: medicalRecords.title,
+          status: notifications.status,
+        })
+        .from(notifications)
+        .innerJoin(
+          medicalRecords,
+          eq(notifications.record_id, medicalRecords.id),
+        )
+        .innerJoin(users, eq(notifications.org_id, users.id))
+        .where(eq(notifications.org_id, userData.id));
+    return NextResponse.json(result);
   } catch (err) {
     console.error(err);
     return NextResponse.json(

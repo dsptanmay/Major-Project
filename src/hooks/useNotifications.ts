@@ -6,18 +6,45 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
-export const useGetNotifications = (walletAddress?: string) => {
-  return useQuery<SelectNotification[], Error>({
+type UserNotifications = {
+  id: string;
+  tokenId: string;
+  message: string;
+  orgName: string;
+  orgAddress: string;
+};
+
+type OrgNotifications = {
+  id: string;
+  tokenId: string;
+  message: string;
+  recordTitle: string;
+  status: (typeof notificationStatusEnum.enumValues)[number];
+};
+
+export const useUserNotifications = (walletAddress?: string) => {
+  return useQuery<UserNotifications[], Error>({
     queryKey: ["notifications", walletAddress],
-    queryFn: () => {
-      if (!walletAddress) throw new Error("Wallet Address is required");
-      return axios
-        .get(`/api/test/notifications?walletAddress=${walletAddress}`)
-        .then((response) => response.data);
-    },
     enabled: !!walletAddress,
-    refetchOnWindowFocus: true,
-    // refetchInterval: 5000,
+    queryFn: async () => {
+      const { data } = await axios.get<UserNotifications[]>(
+        `/api/test/notifications?walletAddress=${walletAddress}`,
+      );
+      return data;
+    },
+  });
+};
+
+export const useOrgNotifications = (walletAddress?: string) => {
+  return useQuery<OrgNotifications[], Error>({
+    queryKey: ["notifications", walletAddress],
+    enabled: !!walletAddress,
+    queryFn: async () => {
+      const { data } = await axios.get<OrgNotifications[]>(
+        `/api/test/notifications?walletAddress=${walletAddress}`,
+      );
+      return data;
+    },
   });
 };
 
