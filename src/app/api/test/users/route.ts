@@ -38,13 +38,14 @@ type CreateUserRequest = {
   wallet_address: string;
   role: (typeof userRoleEnum.enumValues)[number];
   clerk_user_id: string;
+  username: string;
 };
 
 export async function POST(req: NextRequest) {
   try {
     const body: CreateUserRequest = await req.json();
     const client = await clerkClient();
-    const { wallet_address, role, clerk_user_id } = body;
+    const { wallet_address, role, clerk_user_id, username } = body;
     const existingUser = await db.query.users.findFirst({
       where: (record, { eq }) => eq(record.wallet_address, wallet_address),
     });
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
       );
     const newUser = await db
       .insert(users)
-      .values({ wallet_address, role })
+      .values({ wallet_address, role, username })
       .returning();
     client.users.updateUserMetadata(clerk_user_id, {
       publicMetadata: { role },
