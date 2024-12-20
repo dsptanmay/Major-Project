@@ -14,7 +14,11 @@ import {
 } from "@/components/ui/table";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
-import { useUserNotifications } from "@/hooks/useNotifications";
+import {
+  UserNotification,
+  useUpdateNotification,
+  useUserNotifications,
+} from "@/hooks/useNotifications";
 import { AlertCircle, Wallet as WalletIcon } from "lucide-react";
 import React from "react";
 import { prepareContractCall } from "thirdweb";
@@ -31,74 +35,51 @@ function UserNotificationsPage() {
     status,
   } = useUserNotifications(activeAccount?.address);
 
-  const handleApprove = async (notification: any) => {
+  const { mutate: updateNotification, isPending: isUpdating } =
+    useUpdateNotification();
+
+  const handleApprove = async (notification: UserNotification) => {
     try {
-      const notifResponse = await fetch("/api/notifications", {
-        method: "PATCH",
-        body: JSON.stringify({
-          org_address: notification.org_address,
-          user_address: activeAccount!.address,
-          token_id: notification.nft_token_id,
-          status: "approved",
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+      updateNotification({
+        notification_id: notification.id,
+        status: "approved",
+        orgAddress: notification.orgAddress,
       });
 
-      const grantResponse = await fetch("/api/org-files", {
-        method: "POST",
-        body: JSON.stringify({
-          org_name: notification.org_name,
-          token_id: notification.nft_token_id,
-        }),
-      });
+      //TODO: add updateRequest here as well
 
       const transaction = prepareContractCall({
-        contract: contract,
+        contract,
         method: "function grantAccess(uint256 tokenId, address user)",
-        params: [BigInt(notification.nft_token_id), notification.org_address],
+        params: [BigInt(notification.tokenId), notification.orgAddress],
       });
       sendTransaction(transaction);
 
-      if (notifResponse.ok && grantResponse.ok) {
-        setNotifications((prev) => prev.filter((n) => n != notification));
-        toast({
-          title: "Success",
-          description: "Successfully approved request",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to approve access for record",
-        });
-      }
-    } catch (err) {
-      console.error("Error in granting access:", err);
+      toast({
+        title: "Success",
+        description: `Successfully granted access to ${notification.orgAddress.substring(0, 6)} for Token ID ${notification.tokenId}`,
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: `Failed to approve request`,
+      });
     }
   };
-  const handleDeny = async (notification: any) => {
+  const handleDeny = async (notification: UserNotification) => {
     try {
-      const response = await fetch("/api/notifications", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          org_address: notification.org_address,
-          user_address: activeAccount!.address,
-          token_id: notification.nft_token_id,
-          status: "denied",
-        }),
+      updateNotification({
+        notification_id: notification.id,
+        orgAddress: notification.orgAddress,
+        status: "denied",
       });
 
-      if (response.ok) {
-        setNotifications((prevNotifs) =>
-          prevNotifs.filter((n) => n != notification),
-        );
-        toast({
-          title: "Success",
-          description: "Request denied successfully!",
-        });
-      }
+      //TODO: add updateRequest here as well
+      toast({
+        title: "Success",
+        description: "Successfully denied request",
+      });
     } catch (error) {
       console.error(error);
       toast({ title: "Error", description: "Failed to deny request" });
@@ -159,8 +140,8 @@ function UserNotificationsPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {notifications.map((notification, i) => (
-            <TableRow key={i}>
+          {notifications.map((notification) => (
+            <TableRow key={notification.id}>
               <TableCell>{notification.orgName}</TableCell>
               <TableCell>{`${notification.orgAddress.substring(0, 6)}...${notification.orgAddress.substring(38)}`}</TableCell>
               <TableCell className="text-center">
@@ -172,6 +153,7 @@ function UserNotificationsPage() {
                   variant="noShadow"
                   className="flex flex-grow bg-green-300 "
                   onClick={() => handleApprove(notification)}
+                  disabled={isUpdating}
                 >
                   Approve
                 </Button>
@@ -179,6 +161,7 @@ function UserNotificationsPage() {
                   variant="noShadow"
                   className="flex flex-grow bg-red-300"
                   onClick={() => handleDeny(notification)}
+                  disabled={isUpdating}
                 >
                   Deny
                 </Button>
