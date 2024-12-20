@@ -75,5 +75,8 @@ export const useUpdateNotification = () => {
       const data: SelectNotification = response.data;
       return data;
     },
+    onSettled: () => {
+      queryClient.refetchQueries({ queryKey: ["notifications"] });
+    },
   });
 };
