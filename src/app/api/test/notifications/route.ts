@@ -116,23 +116,26 @@ export async function GET(request: NextRequest) {
 }
 
 type NotificationPatchRequest = {
-  token_id: string;
+  notification_id: string;
   status: "approved" | "denied";
 };
 
 export async function PATCH(request: NextRequest) {
   try {
     const body: NotificationPatchRequest = await request.json();
-    const { token_id, status } = body;
-    const recordData = await db.query.medicalRecords.findFirst({
-      where: (record, { eq }) => eq(record.token_id, token_id),
+    const { notification_id, status } = body;
+    const notifData = await db.query.notifications.findFirst({
+      where: (record, { eq }) => eq(record.id, notification_id),
       columns: {
         id: true,
       },
     });
 
-    if (!recordData)
-      return NextResponse.json({ error: "Record not found" }, { status: 404 });
+    if (!notifData)
+      return NextResponse.json(
+        { error: "Notification not found" },
+        { status: 404 },
+      );
 
     const updatedNotification = await db
       .update(notifications)
