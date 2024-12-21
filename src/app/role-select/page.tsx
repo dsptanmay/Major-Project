@@ -1,4 +1,5 @@
 "use client";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,58 +17,63 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Toaster } from "@/components/ui/toaster";
+import { userRoleEnum } from "@/db/schema_2";
 import { useToast } from "@/hooks/use-toast";
+import { useCreateUser } from "@/hooks/useUsers";
 import { useUser } from "@clerk/nextjs";
+import { Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
+import { useActiveAccount } from "thirdweb/react";
 
 export default function RoleSelectionPage() {
-  const { toast } = useToast();
-  const [role, setRole] = useState<string>("");
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const { user } = useUser();
   const router = useRouter();
-  const handleSubmit = async () => {
-    if (!role) {
-      toast({
-        title: "Error",
-        description: "No role selected!",
-      });
-    }
-    try {
-      const response = await fetch("/api/role", {
-        method: "POST",
-        body: JSON.stringify({ role, user_id: user?.id }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+  const { toast } = useToast();
+  const { user } = useUser();
+  const activeAccount = useActiveAccount();
+  const {
+    mutate: createUser,
+    status,
+    error: createError,
+    isPending,
+  } = useCreateUser();
 
-      if (response.ok) {
-        toast({ title: "Success", description: "Role set successfully!" });
+  const [role, setRole] =
+    useState<(typeof userRoleEnum.enumValues)[number]>("user");
+
+  const handleCreateUser = () => {
+    const newUser = {
+      wallet_address: activeAccount!.address,
+      role: role as (typeof userRoleEnum.enumValues)[number],
+      username: user!.username!,
+      clerk_user_id: user!.id,
+    };
+    try {
+      createUser(newUser);
+      if (status === "success") {
+        toast({
+          title: "Success",
+          description: `Successfully created user with role ${role}`,
+        });
         router.push("/dashboard");
-      } else {
-        if (response.status === 409) {
-          toast({
-            title: "Role already assigned",
-            description: "User already has a role!",
-          });
-          // setTimeout(() => {}, 2000);
-          router.push("/dashboard");
-        }
-        // toast({
-        //   title: "Error",
-        //   description: "Failed to set role. Please try again!",
-        // });
       }
-    } catch (err) {
-      setIsProcessing(false);
-      toast({
-        title: "Error",
-        description: "An error occurred while setting your role!",
-      });
+    } catch (error) {
+      console.error(createError);
+      toast({ title: "Error", description: "Failed to create user" });
     }
   };
+
+  if (!activeAccount)
+    return (
+      <div>
+        <Alert className="bg-red-300">
+          <Wallet className="h-4 w-4" />
+          <AlertTitle>Missing Wallet</AlertTitle>
+          <AlertDescription>Please connect your wallet first!</AlertDescription>
+        </Alert>
+      </div>
+    );
+
   return (
     <div>
       <Card className="w-[350px]">
@@ -81,7 +87,13 @@ export default function RoleSelectionPage() {
           <form>
             <div className="grid w-full items-center gap-4">
               <div className="flex flex-col space-y-1.5">
-                <Select onValueChange={(e) => setRole(e)}>
+                <Select
+                  value={role}
+                  onValueChange={(value) => {
+                    setRole(value as (typeof userRoleEnum.enumValues)[number]);
+                  }}
+                  defaultValue="user"
+                >
                   <SelectTrigger id="framework">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
@@ -97,9 +109,16 @@ export default function RoleSelectionPage() {
           </form>
         </CardContent>
         <CardFooter className="flex w-full">
-          <Button className="w-full" onClick={handleSubmit}>
-            Proceed
-          </Button>
+          {status !== "success" && (
+            <Button
+              className="w-full"
+              onClick={handleCreateUser}
+              variant="default"
+              disabled={isPending}
+            >
+              {status === "pending" ? "Creating User..." : "Proceed"}
+            </Button>
+          )}
         </CardFooter>
       </Card>
       <Toaster />
