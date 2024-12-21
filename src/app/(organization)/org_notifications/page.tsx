@@ -22,6 +22,8 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
+import { useOrgNotifications } from "@/hooks/useNotifications";
+import LoadingStateComponent from "@/components/loading-card";
 
 type Notification = {
   user_address: string;
@@ -54,60 +56,40 @@ const StatusBadge: React.FC<{ status: Notification["status"] }> = ({
 export default function OrgNotificationsPage() {
   const activeAccount = useActiveAccount();
   const { toast } = useToast();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(
-          `/api/notifications?orgAddress=${activeAccount?.address}`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-          },
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setNotifications(data);
-        } else {
-          setNotifications([]);
-          return;
-        }
-      } catch (error) {
-        console.error(error);
-        setNotifications([]);
-      }
-    };
-    if (activeAccount) fetchData();
-  }, [activeAccount]);
+  const {
+    data: notifications,
+    status,
+    error,
+  } = useOrgNotifications(activeAccount?.address);
 
-  const handleDelete = async (notification: Notification) => {
-    try {
-      const response = await fetch(
-        `/api/notifications?orgAddress=${activeAccount!.address}&userAddress=${notification.user_address}&tokenId=${notification.token_id}`,
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-        },
-      );
+  // const handleDelete = async (notification: any) => {
+  //   try {
+  //     const response = await fetch(
+  //       `/api/notifications?orgAddress=${activeAccount!.address}&userAddress=${notification.user_address}&tokenId=${notification.token_id}`,
+  //       {
+  //         method: "DELETE",
+  //         headers: { "Content-Type": "application/json" },
+  //       },
+  //     );
 
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Notification deleted successfully",
-        });
-        setNotifications((prevNotifs) =>
-          prevNotifs.filter((n) => n != notification),
-        );
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed in deleteing notification",
-      });
-      console.error(error);
-    }
-  };
+  //     if (response.ok) {
+  //       toast({
+  //         title: "Success",
+  //         description: "Notification deleted successfully",
+  //       });
+  //       setNotifications((prevNotifs) =>
+  //         prevNotifs.filter((n) => n != notification),
+  //       );
+  //     }
+  //   } catch (error) {
+  //     toast({
+  //       title: "Error",
+  //       description: "Failed in deleteing notification",
+  //     });
+  //     console.error(error);
+  //   }
+  // };
 
   if (!activeAccount) {
     return (
@@ -120,6 +102,23 @@ export default function OrgNotificationsPage() {
       </div>
     );
   }
+
+  if (status === "pending")
+    return <LoadingStateComponent content="Loading notifications..." />;
+
+  if (status === "error")
+    return (
+      <div>
+        <Alert className="bg-red-400">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            An error occurred while fetching notifications <br />{" "}
+            {error.message}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
 
   if (notifications.length === 0)
     return (
@@ -146,7 +145,6 @@ export default function OrgNotificationsPage() {
         <TableCaption>A list of your recent notifications</TableCaption>
         <TableHeader>
           <TableRow>
-            <TableHead>User Address</TableHead>
             <TableHead className="text-center">Token ID</TableHead>
             <TableHead>Comments</TableHead>
             <TableHead className="text-center">Status</TableHead>
@@ -156,11 +154,10 @@ export default function OrgNotificationsPage() {
         <TableBody>
           {notifications.map((notification, i) => (
             <TableRow key={i}>
-              <TableCell>{`${notification.user_address.substring(0, 6)}...${notification.user_address.substring(38)}`}</TableCell>
               <TableCell className="text-center">
-                {notification.token_id}
+                {notification.tokenId}
               </TableCell>
-              <TableCell>{notification.comments}</TableCell>
+              <TableCell>{notification.message}</TableCell>
               <TableCell className="text-center">
                 <StatusBadge status={notification.status} />
               </TableCell>
@@ -170,7 +167,7 @@ export default function OrgNotificationsPage() {
                     <Button
                       variant="noShadow"
                       className="bg-red-300"
-                      onClick={() => handleDelete(notification)}
+                      onClick={() => {}}
                     >
                       Delete Notification
                     </Button>
@@ -178,7 +175,7 @@ export default function OrgNotificationsPage() {
                 )}
                 {notification.status === "approved" && (
                   <Link
-                    href={`/org_view/${notification.token_id}`}
+                    href={`/org_view/${notification.tokenId}`}
                     prefetch={true}
                     className="flex h-full w-full flex-col items-center justify-between"
                   >

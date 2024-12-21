@@ -6,18 +6,45 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
-export const useGetNotifications = (walletAddress?: string) => {
-  return useQuery<SelectNotification[], Error>({
+export type UserNotification = {
+  id: string;
+  tokenId: string;
+  message: string;
+  orgName: string;
+  orgAddress: string;
+};
+
+export type OrgNotification = {
+  id: string;
+  tokenId: string;
+  message: string;
+  recordTitle: string;
+  status: (typeof notificationStatusEnum.enumValues)[number];
+};
+
+export const useUserNotifications = (walletAddress?: string) => {
+  return useQuery<UserNotification[], Error>({
     queryKey: ["notifications", walletAddress],
-    queryFn: () => {
-      if (!walletAddress) throw new Error("Wallet Address is required");
-      return axios
-        .get(`/api/test/notifications?walletAddress=${walletAddress}`)
-        .then((response) => response.data);
-    },
     enabled: !!walletAddress,
-    refetchOnWindowFocus: true,
-    // refetchInterval: 5000,
+    queryFn: async () => {
+      const { data } = await axios.get<UserNotification[]>(
+        `/api/test/notifications?walletAddress=${walletAddress}`,
+      );
+      return data;
+    },
+  });
+};
+
+export const useOrgNotifications = (walletAddress?: string) => {
+  return useQuery<OrgNotification[], Error>({
+    queryKey: ["notifications", walletAddress],
+    enabled: !!walletAddress,
+    queryFn: async () => {
+      const { data } = await axios.get<OrgNotification[]>(
+        `/api/test/notifications?walletAddress=${walletAddress}`,
+      );
+      return data;
+    },
   });
 };
 
@@ -29,7 +56,7 @@ export const useCreateNotification = () => {
       const data: SelectNotification = response.data;
       return data;
     },
-    onMutate: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
@@ -37,6 +64,7 @@ export const useCreateNotification = () => {
 
 type UpdateNotificationData = {
   notification_id: string;
+  orgAddress: string;
   status: "approved" | "denied";
 };
 
@@ -47,6 +75,12 @@ export const useUpdateNotification = () => {
       const response = await axios.patch("/api/test/notifications", updateData);
       const data: SelectNotification = response.data;
       return data;
+    },
+    onSettled: (data, error, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["notifications", variables.orgAddress],
+        exact: true,
+      });
     },
   });
 };

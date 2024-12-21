@@ -1,4 +1,5 @@
 "use client";
+import LoadingStateComponent from "@/components/loading-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,7 +9,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CircleAlert, Library, Wallet } from "lucide-react";
+import { useGetRecords } from "@/hooks/useRecords";
+import {
+  AlertCircle,
+  CircleAlert,
+  InfoIcon,
+  Library,
+  Wallet,
+} from "lucide-react";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
@@ -20,27 +28,12 @@ interface RecordData {
 }
 
 function RecordsPageContent() {
-  const [records, setRecords] = useState<RecordData[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const activeAccount = useActiveAccount();
-  useEffect(() => {
-    const fetchRecords = async () => {
-      const response = await fetch(
-        `/api/user-files/?userAddress=${activeAccount!.address}`,
-        { method: "GET", headers: { "Content-Type": "application/json" } },
-      );
-      if (response.ok) {
-        const data: RecordData[] = await response.json();
-        setRecords(data);
-      } else if (response.status === 404) {
-        setError("User has no owned NFTs");
-        setRecords([]);
-      } else {
-        setError("Failed to fetch records!");
-      }
-    };
-    if (activeAccount) fetchRecords();
-  }, [activeAccount]);
+  const {
+    data: records,
+    status,
+    error,
+  } = useGetRecords(activeAccount?.address);
 
   if (!activeAccount)
     return (
@@ -53,12 +46,28 @@ function RecordsPageContent() {
       </div>
     );
 
+  if (status === "pending")
+    return <LoadingStateComponent content="Loading records..." />;
+  if (status === "error")
+    return (
+      <div>
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            Failed to fetch records. <br />
+            {error.message}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+
   if (records.length === 0)
     return (
       <div>
-        <Alert className="bg-yellow-200">
+        <Alert>
           <Library className="h-4 w-4" />
-          <AlertTitle>Missing Records</AlertTitle>
+          <InfoIcon>Missing Records</InfoIcon>
           <AlertDescription>No records found for user!</AlertDescription>
         </Alert>
       </div>

@@ -1,5 +1,6 @@
 "use client";
 import { contract } from "@/app/client";
+import LoadingStateComponent from "@/components/loading-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,110 +14,72 @@ import {
 } from "@/components/ui/table";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
+import {
+  UserNotification,
+  useUpdateNotification,
+  useUserNotifications,
+} from "@/hooks/useNotifications";
 import { AlertCircle, Wallet as WalletIcon } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { prepareContractCall } from "thirdweb";
 import { useActiveAccount, useSendTransaction } from "thirdweb/react";
-
-type Notification = {
-  org_name: string;
-  org_address: string;
-  nft_token_id: string;
-  comments: string;
-  status: "pending" | "approved" | "denied";
-};
 
 function UserNotificationsPage() {
   const activeAccount = useActiveAccount();
   const { toast } = useToast();
   const { mutate: sendTransaction } = useSendTransaction();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const response = await fetch(
-        `/api/notifications?userAddress=${activeAccount!.address}`,
-        { method: "GET", headers: { "Content-Type": "application/json" } },
-      );
+  const {
+    data: notifications,
+    error,
+    status,
+  } = useUserNotifications(activeAccount?.address);
 
-      if (response.ok) {
-        const data: Notification[] = await response.json();
-        setNotifications(data);
-      } else {
-        setNotifications([]);
-      }
-    };
-    if (activeAccount) fetchData();
-  }, [activeAccount]);
+  const { mutate: updateNotification, isPending: isUpdating } =
+    useUpdateNotification();
 
-  const handleApprove = async (notification: Notification) => {
+  const handleApprove = async (notification: UserNotification) => {
     try {
-      const notifResponse = await fetch("/api/notifications", {
-        method: "PATCH",
-        body: JSON.stringify({
-          org_address: notification.org_address,
-          user_address: activeAccount!.address,
-          token_id: notification.nft_token_id,
-          status: "approved",
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+      updateNotification({
+        notification_id: notification.id,
+        status: "approved",
+        orgAddress: notification.orgAddress,
       });
 
-      const grantResponse = await fetch("/api/org-files", {
-        method: "POST",
-        body: JSON.stringify({
-          org_name: notification.org_name,
-          token_id: notification.nft_token_id,
-        }),
-      });
+      //TODO: add updateRequest here as well
 
       const transaction = prepareContractCall({
-        contract: contract,
+        contract,
         method: "function grantAccess(uint256 tokenId, address user)",
-        params: [BigInt(notification.nft_token_id), notification.org_address],
+        params: [BigInt(notification.tokenId), notification.orgAddress],
       });
       sendTransaction(transaction);
 
-      if (notifResponse.ok && grantResponse.ok) {
-        setNotifications((prev) => prev.filter((n) => n != notification));
-        toast({
-          title: "Success",
-          description: "Successfully approved request",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to approve access for record",
-        });
-      }
-    } catch (err) {
-      console.error("Error in granting access:", err);
+      toast({
+        title: "Success",
+        description: `Successfully granted access to ${notification.orgAddress.substring(0, 6)} for Token ID ${notification.tokenId}`,
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: `Failed to approve request`,
+      });
     }
   };
-  const handleDeny = async (notification: Notification) => {
+  const handleDeny = async (notification: UserNotification) => {
     try {
-      const response = await fetch("/api/notifications", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          org_address: notification.org_address,
-          user_address: activeAccount!.address,
-          token_id: notification.nft_token_id,
-          status: "denied",
-        }),
+      updateNotification({
+        notification_id: notification.id,
+        orgAddress: notification.orgAddress,
+        status: "denied",
       });
 
-      if (response.ok) {
-        setNotifications((prevNotifs) =>
-          prevNotifs.filter((n) => n != notification),
-        );
-        toast({
-          title: "Success",
-          description: "Request denied successfully!",
-        });
-      }
+      //TODO: add updateRequest here as well
+      toast({
+        title: "Success",
+        description: "Successfully denied request",
+      });
     } catch (error) {
       console.error(error);
       toast({ title: "Error", description: "Failed to deny request" });
@@ -134,6 +97,21 @@ function UserNotificationsPage() {
       </div>
     );
 
+  if (status === "pending")
+    return <LoadingStateComponent content="Loading notifications..." />;
+
+  if (status === "error")
+    return (
+      <div>
+        <Alert className="bg-red-400">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            Failed to fetch notifications <br /> {error.message}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
   if (notifications.length === 0)
     return (
       <div>
@@ -157,40 +135,39 @@ function UserNotificationsPage() {
             <TableHead>Org Name</TableHead>
             <TableHead>Org Address</TableHead>
             <TableHead className="text-center">Token ID</TableHead>
-            <TableHead>Comments</TableHead>
+            <TableHead>Message</TableHead>
             <TableHead className="text-center">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {notifications.map(
-            (notification, i) =>
-              notification.status === "pending" && (
-                <TableRow key={i}>
-                  <TableCell>{notification.org_name}</TableCell>
-                  <TableCell>{`${notification.org_address.substring(0, 6)}...${notification.org_address.substring(38)}`}</TableCell>
-                  <TableCell className="text-center">
-                    {notification.nft_token_id}
-                  </TableCell>
-                  <TableCell>{notification.comments}</TableCell>
-                  <TableCell className="flex w-full flex-grow space-x-3">
-                    <Button
-                      variant="noShadow"
-                      className="flex flex-grow bg-green-300 "
-                      onClick={() => handleApprove(notification)}
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      variant="noShadow"
-                      className="flex flex-grow bg-red-300"
-                      onClick={() => handleDeny(notification)}
-                    >
-                      Deny
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ),
-          )}
+          {notifications.map((notification) => (
+            <TableRow key={notification.id}>
+              <TableCell>{notification.orgName}</TableCell>
+              <TableCell>{`${notification.orgAddress.substring(0, 6)}...${notification.orgAddress.substring(38)}`}</TableCell>
+              <TableCell className="text-center">
+                {notification.tokenId}
+              </TableCell>
+              <TableCell>{notification.message}</TableCell>
+              <TableCell className="flex w-full flex-grow space-x-3">
+                <Button
+                  variant="noShadow"
+                  className="flex flex-grow bg-green-300 "
+                  onClick={() => handleApprove(notification)}
+                  disabled={isUpdating}
+                >
+                  Approve
+                </Button>
+                <Button
+                  variant="noShadow"
+                  className="flex flex-grow bg-red-300"
+                  onClick={() => handleDeny(notification)}
+                  disabled={isUpdating}
+                >
+                  Deny
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
       <Toaster />
