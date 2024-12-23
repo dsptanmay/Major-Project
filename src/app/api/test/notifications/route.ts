@@ -150,3 +150,33 @@ export async function PATCH(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const notificationId = request.headers.get("x-notification-id");
+    if (!notificationId)
+      return NextResponse.json(
+        { error: "Missing notification id" },
+        { status: 400 },
+      );
+
+    const deletedNotification = await db
+      .delete(notifications)
+      .where(eq(notifications.id, notificationId))
+      .returning();
+
+    if (deletedNotification.length === 0)
+      return NextResponse.json(
+        { error: "Notification not found" },
+        { status: 404 },
+      );
+
+    return NextResponse.json(deletedNotification[0], { status: 201 });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
+  }
+}
