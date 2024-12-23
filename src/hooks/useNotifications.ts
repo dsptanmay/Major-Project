@@ -64,7 +64,7 @@ export const useCreateNotification = () => {
 
 type UpdateNotificationData = {
   notification_id: string;
-  orgAddress: string;
+  org_address: string;
   status: "approved" | "denied";
 };
 
@@ -78,7 +78,34 @@ export const useUpdateNotification = () => {
     },
     onSettled: (data, error, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ["notifications", variables.orgAddress],
+        queryKey: ["notifications", variables.org_address],
+        exact: true,
+      });
+    },
+  });
+};
+
+type DeleteNotificationData = {
+  notification_id: string;
+  org_address: string;
+};
+
+export const useDeleteNotification = () => {
+  const queryClient = useQueryClient();
+  return useMutation<SelectNotification, Error, DeleteNotificationData>({
+    mutationFn: async (deleteData) => {
+      const response = await axios.delete<SelectNotification>(
+        "/api/test/notifications",
+        {
+          headers: { "x-notification-id": deleteData.notification_id },
+        },
+      );
+      const data = response.data;
+      return data;
+    },
+    onSettled: (data, error, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["notifications", variables.org_address],
         exact: true,
       });
     },
