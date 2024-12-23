@@ -1,5 +1,6 @@
 {
     "typescript.tsdk": "node_modules/typescript/lib",
     "editor.wordWrap": "on",
-    "npm.packageManager": "bun"
+    "npm.packageManager": "bun",
+    "editor.fontLigatures": true
 }
