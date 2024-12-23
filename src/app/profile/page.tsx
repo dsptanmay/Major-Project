@@ -71,7 +71,7 @@ function ProfilePage() {
       <Card className="bg-[#fff4e0] shadow-none">
         <CardHeader>
           <CardTitle className="flex flex-col items-center space-y-4 ">
-            <span>{user?.username}</span>
+            <span>{userData.username}</span>
             <Badge className="bg-[#fd9745] text-base font-semibold">
               {userData.role}
             </Badge>
