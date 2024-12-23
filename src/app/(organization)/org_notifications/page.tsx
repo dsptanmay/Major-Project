@@ -22,8 +22,14 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
-import { useOrgNotifications } from "@/hooks/useNotifications";
+import {
+  OrgNotification,
+  useDeleteNotification,
+  useOrgNotifications,
+} from "@/hooks/useNotifications";
 import LoadingStateComponent from "@/components/loading-card";
+import axios from "axios";
+import { useQueryClient } from "@tanstack/react-query";
 
 type Notification = {
   user_address: string;
@@ -56,11 +62,18 @@ const StatusBadge: React.FC<{ status: Notification["status"] }> = ({
 export default function OrgNotificationsPage() {
   const activeAccount = useActiveAccount();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const {
+    mutate: deleteNotification,
+    status: deleteStatus,
+    error: deleteError,
+    isPending: deletePending,
+  } = useDeleteNotification();
 
   const {
     data: notifications,
-    status,
-    error,
+    status: fetchStatus,
+    error: fetchError,
   } = useOrgNotifications(activeAccount?.address);
 
   // const handleDelete = async (notification: any) => {
@@ -91,6 +104,24 @@ export default function OrgNotificationsPage() {
   //   }
   // };
 
+  const handleDelete = async (notification: OrgNotification) => {
+    try {
+      deleteNotification({
+        notification_id: notification.id,
+        org_address: activeAccount!.address,
+      });
+      if (deleteStatus === "success")
+        toast({
+          title: "Success",
+          description: "Deleted notification successfully!",
+        });
+    } catch (error) {
+      console.error(error, deleteError?.message);
+
+      toast({ title: "Error", description: "Failed to delete notification" });
+    }
+  };
+
   if (!activeAccount) {
     return (
       <div>
@@ -103,10 +134,10 @@ export default function OrgNotificationsPage() {
     );
   }
 
-  if (status === "pending")
+  if (fetchStatus === "pending")
     return <LoadingStateComponent content="Loading notifications..." />;
 
-  if (status === "error")
+  if (fetchStatus === "error")
     return (
       <div>
         <Alert className="bg-red-400">
@@ -114,7 +145,7 @@ export default function OrgNotificationsPage() {
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
             An error occurred while fetching notifications <br />{" "}
-            {error.message}
+            {fetchError.message}
           </AlertDescription>
         </Alert>
       </div>
@@ -167,9 +198,13 @@ export default function OrgNotificationsPage() {
                     <Button
                       variant="noShadow"
                       className="bg-red-300"
-                      onClick={() => {}}
+                      onClick={() => {
+                        handleDelete(notification);
+                      }}
                     >
-                      Delete Notification
+                      {deletePending
+                        ? "Deleting Notification..."
+                        : "Delete Notification"}
                     </Button>
                   </div>
                 )}

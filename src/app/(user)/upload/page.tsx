@@ -1,10 +1,5 @@
 "use client";
-import { client, contract } from "@/app/client";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import React, { useState } from "react";
 import {
   Form,
   FormControl,
@@ -13,93 +8,77 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { CircleCheck, FileKey2, Link2, Wallet } from "lucide-react";
-import React, { useState } from "react";
-import {
-  useActiveAccount,
-  useReadContract,
-  useSendTransaction,
-} from "thirdweb/react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, CheckCircleIcon, Wallet } from "lucide-react";
+
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useCreateRecord, useGetTokenID } from "@/hooks/useRecords";
+
 import { upload } from "thirdweb/storage";
 import { prepareContractCall } from "thirdweb";
+import { useActiveAccount, useSendTransaction } from "thirdweb/react";
+import { client, contract } from "@/app/client";
 
-function AddRecordsPage() {
-  const { mutate: sendTransaction } = useSendTransaction();
-  const { data: tokenID } = useReadContract({
-    contract,
-    method: "function nextTokenIdToMint() view returns (uint256)",
-    params: [],
-  });
+import { useToast } from "@/hooks/use-toast";
 
-  const formSchema = z.object({
-    title: z.string().min(10, {
-      message: "Title must be at least 10 characters.",
-    }),
-    description: z.string().min(10, {
-      message: "Description must be at least 10 characters",
-    }),
-  });
+const formSchema = z.object({
+  title: z.string().min(5, "Title must be at least 5 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  file: z.instanceof(File).refine((file) => {
+    return file && file.type === "application/pdf";
+  }, "File must be a PDF"),
+});
 
-  const form = useForm<z.infer<typeof formSchema>>({
+type FormValues = z.infer<typeof formSchema>;
+
+function TestUploadPage() {
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
       description: "",
     },
   });
+  const { toast } = useToast();
+  const { mutate: sendTransaction } = useSendTransaction();
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+
   const activeAccount = useActiveAccount();
-  const [file, setFile] = useState<File | null>(null);
-  const [encryptionKey, setEncryptionKey] = useState<string | null>(null);
-  const [ipfsLink, setIpfsLink] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isMinting, setIsMinting] = useState(false);
-  const [isMinted, setIsMinted] = useState(false);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0];
-    if (selectedFile) {
-      if (selectedFile.type !== "application/pdf") {
-        setFile(null);
-        return;
-      }
-      setFile(selectedFile);
-    }
-  };
-  const handleEncryptAndUpload = async () => {
-    if (!file) {
-      setError("Please select a PDF file first");
-      return;
-    }
+  const {
+    mutate: createRecord,
+    status: createRecordStatus,
+    error: createError,
+  } = useCreateRecord();
+  const tokenQuery = useGetTokenID();
 
-    setIsProcessing(true);
-    setError(null);
-    setIpfsLink(null);
+  const handleEncryptionAndUpload = async (file: File) => {
+    if (!file) return { encryption_key: null, ipfs_link: null };
 
     try {
       const forge = await import("node-forge");
-
       const fileBuffer = await file.arrayBuffer();
       const uint8Array = new Uint8Array(fileBuffer);
-      const key = forge.random.getBytesSync(32); // 256-bit key
-      const iv = forge.random.getBytesSync(16); // 128-bit IV for AES-CBC
-      const cipher = forge.cipher.createCipher("AES-CBC", key);
 
-      cipher.start({
-        iv: iv,
-      });
+      const key = forge.random.getBytesSync(32);
+      const initial_value = forge.random.getBytesSync(16);
+
+      const cipher = forge.cipher.createCipher("AES-CBC", key);
+      cipher.start({ iv: initial_value });
 
       cipher.update(forge.util.createBuffer(uint8Array));
       cipher.finish();
 
-      const encrypted = cipher.output;
+      const encryptedFile = cipher.output;
 
       const encryptedData = {
-        iv: forge.util.bytesToHex(iv),
-        encryptedContent: encrypted.toHex(),
+        iv: forge.util.bytesToHex(initial_value),
+        encryptedContent: encryptedFile.toHex(),
         originalName: file.name,
       };
 
@@ -107,127 +86,74 @@ function AddRecordsPage() {
         type: "application/json",
       });
 
-      const encryptedFile = new File(
+      const encryptedJson = new File(
         [encryptedBlob],
         `${file.name}.encrypted.json`,
-        {
-          type: "application/json",
-        },
+        { type: "application/json" },
       );
 
-      // Upload to IPFS
-      const uri = await upload({ client, files: [encryptedFile] });
-
-      setIpfsLink(uri);
-      const hexKey = forge.util.bytesToHex(key);
-      setEncryptionKey(hexKey);
-    } catch (err) {
-      setError(
-        "Encryption/Upload failed: " +
-          (err instanceof Error ? err.message : "Unknown error"),
-      );
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const mintNFT = async (title: string, description: string) => {
-    const data = {
-      token_id: tokenID!.toString(),
-      user_address: activeAccount!.address,
-      title,
-      description,
-    };
-    try {
-      setIsMinting(true);
-      const userResponse = await fetch("/api/user-files", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      const tokenResponse = await fetch("/api/tokens", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token_id: tokenID!.toString(),
-          encryption_key: encryptionKey!.toString(),
-        }),
-      });
-
-      const transaction = prepareContractCall({
-        contract,
-        method:
-          "function mintNFT(address to, string ipfsHash) returns (uint256)",
-        params: [activeAccount!.address, ipfsLink!],
-      });
-
-      sendTransaction(transaction);
-      if (userResponse.ok && tokenResponse.ok) {
-        setIsMinting(false);
-        setSuccess("Minted NFT Successfully!");
-        setIsMinted(true);
-      }
+      const uri = await upload({ client: client, files: [encryptedJson] });
+      return { encryption_key: forge.util.bytesToHex(key), ipfs_link: uri };
     } catch (err) {
       console.error(err);
-      setError("Failed to mint NFT!");
-      setSuccess(null);
-      setIsMinting(false);
+      return { encryption_key: null, ipfs_link: null };
     }
   };
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    mintNFT(values.title, values.description);
-  }
+
+  const handleMintNFT = async (formData: FormValues) => {
+    setIsProcessing(true);
+    const { data: tokenId } = await tokenQuery.refetch();
+    const { encryption_key, ipfs_link } = await handleEncryptionAndUpload(
+      formData.file,
+    );
+    if (encryption_key && ipfs_link) {
+      try {
+        const transaction = prepareContractCall({
+          contract,
+          method:
+            "function mintNFT(address to, string ipfsHash) returns (uint256)",
+          params: [activeAccount!.address, ipfs_link],
+        });
+        sendTransaction(transaction);
+        const uploadData = {
+          wallet_address: activeAccount!.address,
+          token_id: tokenId!.toString(),
+          encryption_key: encryption_key,
+          title: formData.title,
+          description: formData.description,
+        };
+        createRecord(uploadData);
+        setIsProcessing(false);
+      } catch (error) {
+        console.error(error);
+        setIsProcessing(false);
+        form.reset();
+      }
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to encrypt and upload file",
+      });
+      setIsProcessing(false);
+      form.reset();
+    }
+  };
+
   if (!activeAccount)
     return (
-      <div className="">
-        <Alert className="bg-red-300">
-          <Wallet className="h-4 w-4" />
-          <AlertTitle>Missing Crypto Wallet</AlertTitle>
+      <div>
+        <Alert className="bg-red-300 ">
+          <Wallet className="size-4" />
+          <AlertTitle>Missing Wallet</AlertTitle>
           <AlertDescription>Please connect your wallet first!</AlertDescription>
         </Alert>
       </div>
     );
+
   return (
-    <div className="flex w-full max-w-6xl flex-col space-y-5 rounded-base border-2 border-border bg-white px-10 py-10 shadow-light ">
-      <div className="flex w-full flex-col space-y-2">
-        <Label
-          htmlFor="file-upload-input"
-          className="font-semibold text-gray-800"
-        >
-          Your file will be encrypted with AES-256 and uploaded to IPFS
-        </Label>
-        <Input
-          type="file"
-          accept=".pdf"
-          onChange={handleFileChange}
-          id="file-upload-input"
-        />
-      </div>
-      {file && !ipfsLink && (
-        <Button onClick={handleEncryptAndUpload}>
-          {isProcessing ? "Uploading document.." : "Upload Document"}
-        </Button>
-      )}
-      {encryptionKey && (
-        <Alert className="bg-yellow-300">
-          <FileKey2 className="h-4 w-4" />
-          <AlertTitle>Encryption Key</AlertTitle>
-          <AlertDescription>{encryptionKey}</AlertDescription>
-        </Alert>
-      )}
-      {ipfsLink && (
-        <Alert className="bg-sky-300">
-          <Link2 className="h-4 w-4" />
-          <AlertTitle>IPFS Link</AlertTitle>
-          <AlertDescription>{ipfsLink}</AlertDescription>
-        </Alert>
-      )}
+    <div className="flex w-full max-w-6xl flex-col space-y-5 rounded-base border-[3px] border-border bg-white p-5 shadow-light">
       <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-5 font-bold"
-        >
+        <form onSubmit={form.handleSubmit(handleMintNFT)} className="space-y-4">
           <FormField
             control={form.control}
             name="title"
@@ -235,7 +161,7 @@ function AddRecordsPage() {
               <FormItem>
                 <FormLabel>Title</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter a title" {...field} />
+                  <Input placeholder="Enter document title" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -248,29 +174,70 @@ function AddRecordsPage() {
               <FormItem>
                 <FormLabel>Description</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter a description" {...field} />
+                  <Textarea
+                    placeholder="Enter a description"
+                    {...field}
+                    className="resize-none"
+                  />
                 </FormControl>
-
                 <FormMessage />
               </FormItem>
             )}
           />
-          {ipfsLink && !isMinted && (
-            <Button type="submit" className="w-full">
-              {isMinting ? "Minting NFT..." : "Mint NFT"}
+          <FormField
+            control={form.control}
+            name="file"
+            render={({ field: { onChange, value, ...field } }) => (
+              <FormItem>
+                <FormLabel>File Upload</FormLabel>
+                <FormControl>
+                  <div className="flex items-center gap-4">
+                    <Input
+                      {...field}
+                      type="file"
+                      accept=".pdf"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) onChange(file);
+                      }}
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {createRecordStatus !== "success" && (
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={createRecordStatus === "pending" || isProcessing}
+            >
+              {createRecordStatus === "pending" || isProcessing
+                ? "Minting NFT..."
+                : "Mint NFT"}
             </Button>
           )}
         </form>
       </Form>
-      {success && (
+      {createRecordStatus === "error" && (
+        <Alert className="flex flex-row space-x-4 bg-rose-500">
+          <AlertCircle className="size-4" />
+          <div className="flex flex-col space-y-4">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{createError.message}</AlertDescription>
+          </div>
+        </Alert>
+      )}
+      {createRecordStatus === "success" && (
         <Alert className="bg-green-300">
-          <CircleCheck className="h-4 w-4" />
+          <CheckCircleIcon className="size-4" />
           <AlertTitle>Success</AlertTitle>
-          <AlertDescription>{success}</AlertDescription>
+          <AlertDescription>Minted NFT successfully!</AlertDescription>
         </Alert>
       )}
     </div>
   );
 }
 
-export default AddRecordsPage;
+export default TestUploadPage;
