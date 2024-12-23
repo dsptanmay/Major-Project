@@ -1,6 +1,8 @@
+import { contract } from "@/app/client";
 import { SelectRecord } from "@/db/schema_2";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import { readContract } from "thirdweb";
 
 export const useGetRecords = (walletAddress?: string) => {
   return useQuery<SelectRecord[], Error>({
@@ -33,8 +35,26 @@ export const useCreateRecord = () => {
       const data: SelectRecord = response.data;
       return data;
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["records"] });
+    onSettled: (data, err, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["records", variables.wallet_address],
+        exact: true,
+      });
+    },
+  });
+};
+
+export const useGetTokenID = () => {
+  return useQuery({
+    queryKey: ["token-id"],
+    enabled: false,
+    queryFn: async () => {
+      const tokenId = await readContract({
+        contract,
+        method: "function nextTokenIdToMint() view returns (uint256)",
+        params: [],
+      });
+      return tokenId;
     },
   });
 };
