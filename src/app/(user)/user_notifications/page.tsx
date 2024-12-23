@@ -43,7 +43,7 @@ function UserNotificationsPage() {
       updateNotification({
         notification_id: notification.id,
         status: "approved",
-        orgAddress: notification.orgAddress,
+        org_address: notification.orgAddress,
       });
 
       //TODO: add updateRequest here as well
@@ -71,7 +71,7 @@ function UserNotificationsPage() {
     try {
       updateNotification({
         notification_id: notification.id,
-        orgAddress: notification.orgAddress,
+        org_address: notification.orgAddress,
         status: "denied",
       });
 
