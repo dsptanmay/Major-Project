@@ -1,4 +1,5 @@
 "use client";
+import LoadingStateComponent from "@/components/loading-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useGetRequests } from "@/hooks/useRequests";
 import { AlertCircle, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -15,39 +17,23 @@ import React, { useEffect, useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
 
 type OrganizationData = {
-  title: string;
-  token_id: string;
-  description: string;
+  requestId: string;
+  recordTitle: string;
+  recordDescription: string;
+  recordTokenId: string;
+  requestedAt: string;
+  processedAt: string;
 };
 
 function GrantedRecordsPage() {
   const activeAccount = useActiveAccount();
-  const [orgRecords, setOrgRecords] = useState<OrganizationData[]>([]);
-  const router = useRouter();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(
-          `/api/org-files?orgAddress=${activeAccount!.address}`,
-          { method: "GET", headers: { "Content-Type": "application/json" } },
-        );
-        if (response.ok) {
-          const data: OrganizationData[] = await response.json();
-          setOrgRecords(data);
-        } else {
-          setOrgRecords([]);
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    if (activeAccount) fetchData();
-  }, [activeAccount]);
+  const {
+    data: orgRequests,
+    status,
+    error,
+  } = useGetRequests(activeAccount?.address);
 
-  const handleViewFile = (tokenId: any) => {
-    router.push(`/org_view/${tokenId}`);
-  };
   if (!activeAccount)
     return (
       <div>
@@ -59,7 +45,19 @@ function GrantedRecordsPage() {
       </div>
     );
 
-  if (orgRecords.length === 0)
+  if (status === "pending")
+    return <LoadingStateComponent content="Loading records..." />;
+  if (status === "error")
+    return (
+      <div>
+        <Alert className="bg-rose-400">
+          <AlertCircle className="size-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error.message}</AlertDescription>
+        </Alert>
+      </div>
+    );
+  if (orgRequests.length === 0)
     return (
       <div>
         <Alert className="bg-yellow-200">
@@ -76,19 +74,21 @@ function GrantedRecordsPage() {
       <h2>
         Granted documents for{" "}
         <code>
-          `${activeAccount.address.substring(0, 7)}...$
-          {activeAccount.address.substring(38)}`
+          {activeAccount.address.substring(0, 7)}...
+          {activeAccount.address.substring(38)}:
         </code>
       </h2>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {orgRecords.map((record, i) => (
-          <Card key={i} className="bg-[#fff4e0]">
+        {orgRequests.map((record) => (
+          <Card key={record.requestId} className="bg-[#fff4e0]">
             <CardHeader>
-              <CardTitle className="text-gray-800">{record.title}</CardTitle>
-              <CardDescription>{record.description}</CardDescription>
+              <CardTitle className="text-gray-800">
+                {record.recordTitle}
+              </CardTitle>
+              <CardDescription>{record.recordDescription}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Link href={`/org_view/${record.token_id}`} prefetch={true}>
+              <Link href={`/org_view/${record.recordTokenId}`} prefetch={true}>
                 <Button className="w-full bg-[#fd9745]">View Document</Button>
               </Link>
             </CardContent>
