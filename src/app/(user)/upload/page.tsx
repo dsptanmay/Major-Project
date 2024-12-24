@@ -36,7 +36,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-function TestUploadPage() {
+function UserUploadPage() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -151,7 +151,7 @@ function TestUploadPage() {
     );
 
   return (
-    <div className="flex w-full max-w-6xl flex-col space-y-5 rounded-base border-[3px] border-border bg-white p-5 shadow-light">
+    <div className="flex w-full max-w-6xl flex-col space-y-5 rounded-base border-2 border-border bg-white p-5 shadow-light">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleMintNFT)} className="space-y-4">
           <FormField
@@ -161,7 +161,10 @@ function TestUploadPage() {
               <FormItem>
                 <FormLabel>Title</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter document title" {...field} />
+                  <Input
+                    placeholder="Enter document title (min. 5 characters)"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -175,7 +178,7 @@ function TestUploadPage() {
                 <FormLabel>Description</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Enter a description"
+                    placeholder="Enter a description (min. 10 characters)"
                     {...field}
                     className="resize-none"
                   />
@@ -240,4 +243,4 @@ function TestUploadPage() {
   );
 }
 
-export default TestUploadPage;
+export default UserUploadPage;
