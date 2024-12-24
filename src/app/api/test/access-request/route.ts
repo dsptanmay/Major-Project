@@ -8,7 +8,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { token_id, org_wallet_address } = body;
     const orgData = await db.query.users.findFirst({
-      where: (record, { eq }) => eq(record.wallet_address, org_wallet_address),
+      where: (record, { eq, and }) =>
+        and(
+          eq(record.wallet_address, org_wallet_address),
+          eq(record.role, "medical_organization"),
+        ),
       columns: {
         id: true,
       },

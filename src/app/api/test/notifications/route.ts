@@ -15,7 +15,11 @@ export async function POST(request: NextRequest) {
       },
     });
     const orgData = await db.query.users.findFirst({
-      where: (record, { eq }) => eq(record.wallet_address, org_wallet_address),
+      where: (record, { eq, and }) =>
+        and(
+          eq(record.wallet_address, org_wallet_address),
+          eq(record.role, "medical_organization"),
+        ),
       columns: {
         id: true,
       },
@@ -125,7 +129,7 @@ export async function PATCH(request: NextRequest) {
     const body: NotificationPatchRequest = await request.json();
     const { notification_id, status } = body;
     const notifData = await db.query.notifications.findFirst({
-      where: (record, { eq }) => eq(record.id, notification_id),
+      where: (notifRecord, { eq }) => eq(notifRecord.id, notification_id),
       columns: {
         id: true,
       },
