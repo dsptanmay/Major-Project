@@ -9,21 +9,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useGetRequests } from "@/hooks/useRequests";
+import { useGetRequestsOrg } from "@/hooks/useRequests";
 import { AlertCircle, Wallet } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useActiveAccount } from "thirdweb/react";
-
-type OrganizationData = {
-  requestId: string;
-  recordTitle: string;
-  recordDescription: string;
-  recordTokenId: string;
-  requestedAt: string;
-  processedAt: string;
-};
 
 function GrantedRecordsPage() {
   const activeAccount = useActiveAccount();
@@ -32,7 +22,7 @@ function GrantedRecordsPage() {
     data: orgRequests,
     status,
     error,
-  } = useGetRequests(activeAccount?.address);
+  } = useGetRequestsOrg(activeAccount?.address);
 
   if (!activeAccount)
     return (
