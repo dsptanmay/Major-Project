@@ -1,6 +1,12 @@
 import { db } from "@/db/drizzle";
-import { accessRequests, accessStatusEnum } from "@/db/schema_2";
-import { eq } from "drizzle-orm";
+import {
+  accessRequests,
+  accessStatusEnum,
+  medicalRecords,
+  notifications,
+  users,
+} from "@/db/schema_2";
+import { and, eq, inArray } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -54,33 +60,108 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const orgAddress = searchParams.get("orgAddress");
+    const walletAddress = searchParams.get("walletAddress");
 
-    if (!orgAddress)
+    if (!walletAddress)
       return NextResponse.json(
-        { error: "Missing organization wallet address" },
+        { error: "Missing wallet address" },
         { status: 400 },
       );
-    const orgData = await db.query.users.findFirst({
-      where: (record, { eq }) => eq(record.wallet_address, orgAddress),
+    const userData = await db.query.users.findFirst({
+      where: (user, { eq }) => eq(user.wallet_address, walletAddress),
       columns: {
         id: true,
+        role: true,
       },
     });
-    if (!orgData)
+    if (!userData)
       return NextResponse.json(
         { error: "Organization not found" },
         { status: 404 },
       );
 
-    const accessRecords = await db.query.accessRequests.findMany({
-      where: (record, { eq, and }) =>
-        and(
-          eq(record.organization_id, orgData.id),
-          eq(record.status, "approved"),
-        ),
-    });
-    return NextResponse.json(accessRecords);
+    let records;
+    if (userData.role === "medical_organization") {
+      const orgRecords = await db
+        .select({
+          requestId: accessRequests.id,
+          recordTitle: medicalRecords.title,
+          recordDescription: medicalRecords.description,
+          recordTokenId: medicalRecords.token_id,
+          requestedAt: accessRequests.requested_at,
+          processedAt: accessRequests.processed_at,
+        })
+        .from(accessRequests)
+        .innerJoin(
+          medicalRecords,
+          eq(accessRequests.record_id, medicalRecords.id),
+        )
+        .innerJoin(users, eq(medicalRecords.user_id, users.id))
+        .where(
+          and(
+            eq(accessRequests.organization_id, userData.id),
+            eq(accessRequests.status, "approved"),
+          ),
+        );
+      return NextResponse.json(orgRecords, { status: 200 });
+    } else if (userData.role === "user") {
+      // const userRecords = await db
+      //   .select({
+      //     requestId: accessRequests.id,
+      //     recordTitle: medicalRecords.title,
+      //     recordTokenId: medicalRecords.token_id,
+      //     processedAt: accessRequests.processed_at,
+      //   })
+      //   .from(accessRequests)
+      //   .innerJoin(
+      //     medicalRecords,
+      //     eq(accessRequests.record_id, medicalRecords.id),
+      //   )
+      //   .innerJoin(users, eq(medicalRecords.user_id, users.id))
+      //   .where(
+      //     and(
+      //       eq(users.wallet_address, walletAddress),
+      //       eq(accessRequests.status, "approved"),
+      //     ),
+      //   );
+      const userRecords = await db
+        .select({
+          recordId: medicalRecords.id,
+        })
+        .from(medicalRecords)
+        .innerJoin(users, eq(medicalRecords.user_id, users.id))
+        .where(eq(users.wallet_address, walletAddress));
+      const recordIds = userRecords.map((record) => record.recordId);
+      if (recordIds.length === 0) {
+        return NextResponse.json(
+          { error: "No records found for this user" },
+          { status: 404 },
+        );
+      }
+
+      const approvedRequests = await db
+        .select({
+          requestId: accessRequests.id,
+          recordTitle: medicalRecords.title,
+          recordTokenId: medicalRecords.token_id,
+          processedAt: accessRequests.processed_at,
+          organizationName: users.username, // Organization's name
+          organizationWallet: users.wallet_address, // Organization's wallet address
+        })
+        .from(accessRequests)
+        .innerJoin(
+          medicalRecords,
+          eq(accessRequests.record_id, medicalRecords.id),
+        ) // Join to get record details
+        .innerJoin(users, eq(accessRequests.organization_id, users.id)) // Join to get organization details
+        .where(
+          and(
+            inArray(accessRequests.record_id, recordIds), // Filter by record IDs
+            eq(accessRequests.status, "approved"), // Only approved requests
+          ),
+        );
+      return NextResponse.json(approvedRequests, { status: 200 });
+    }
   } catch (error) {
     console.error(error);
     return NextResponse.json(
@@ -126,28 +207,41 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const tokenId = searchParams.get("tokenId");
-    if (!tokenId)
+    const requestId = searchParams.get("id");
+    if (!requestId)
       return NextResponse.json(
-        { error: "Token ID is required" },
+        { error: "Access Request ID is required" },
         { status: 400 },
       );
-    const recordData = await db.query.medicalRecords.findFirst({
-      where: (record, { eq }) => eq(record.token_id, tokenId),
+    const accessRequest = await db.query.accessRequests.findFirst({
+      where: (record, { eq }) => eq(record.id, requestId),
       columns: {
-        id: true,
+        record_id: true,
+        organization_id: true,
       },
     });
 
-    if (!recordData)
-      return NextResponse.json({ status: "Record not found" }, { status: 404 });
+    if (!accessRequest)
+      return NextResponse.json(
+        { error: "Access Request with given ID not found" },
+        { status: 404 },
+      );
+
+    await db
+      .delete(notifications)
+      .where(
+        and(
+          eq(notifications.record_id, accessRequest.record_id),
+          eq(notifications.org_id, accessRequest.organization_id),
+        ),
+      );
 
     const deletedRequest = await db
       .delete(accessRequests)
-      .where(eq(accessRequests.record_id, recordData.id))
+      .where(eq(accessRequests.id, requestId))
       .returning();
 
-    return NextResponse.json(deletedRequest[0], { status: 200 });
+    return NextResponse.json(deletedRequest, { status: 201 });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
