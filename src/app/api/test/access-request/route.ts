@@ -105,25 +105,6 @@ export async function GET(request: NextRequest) {
         );
       return NextResponse.json(orgRecords, { status: 200 });
     } else if (userData.role === "user") {
-      // const userRecords = await db
-      //   .select({
-      //     requestId: accessRequests.id,
-      //     recordTitle: medicalRecords.title,
-      //     recordTokenId: medicalRecords.token_id,
-      //     processedAt: accessRequests.processed_at,
-      //   })
-      //   .from(accessRequests)
-      //   .innerJoin(
-      //     medicalRecords,
-      //     eq(accessRequests.record_id, medicalRecords.id),
-      //   )
-      //   .innerJoin(users, eq(medicalRecords.user_id, users.id))
-      //   .where(
-      //     and(
-      //       eq(users.wallet_address, walletAddress),
-      //       eq(accessRequests.status, "approved"),
-      //     ),
-      //   );
       const userRecords = await db
         .select({
           recordId: medicalRecords.id,
