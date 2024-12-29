@@ -1,8 +1,9 @@
 "use client";
-import { contract } from "@/app/client";
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Toaster } from "@/components/ui/toaster";
 import LoadingStateComponent from "@/components/loading-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -12,22 +13,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Toaster } from "@/components/ui/toaster";
-import { useToast } from "@/hooks/use-toast";
+import { AlertCircle } from "lucide-react";
+import MissingWalletComponent from "@/components/missing-wallet";
+
+import { contract } from "@/app/client";
+import { grantAccess } from "@/thirdweb/11155111/functions";
+import { useActiveAccount, useSendTransaction } from "thirdweb/react";
+
 import {
-  UserNotification,
+  type UserNotification,
   useUpdateNotification,
   useUserNotifications,
 } from "@/hooks/useNotifications";
-import { AlertCircle, Wallet as WalletIcon } from "lucide-react";
-import React from "react";
-import { prepareContractCall } from "thirdweb";
-import { useActiveAccount, useSendTransaction } from "thirdweb/react";
+import { useToast } from "@/hooks/use-toast";
+import { useUpdateRequest } from "@/hooks/useRequests";
 
 function UserNotificationsPage() {
   const activeAccount = useActiveAccount();
   const { toast } = useToast();
-  const { mutate: sendTransaction } = useSendTransaction();
+  const { mutateAsync: sendTransaction } = useSendTransaction();
 
   const {
     data: notifications,
@@ -35,30 +39,39 @@ function UserNotificationsPage() {
     status,
   } = useUserNotifications(activeAccount?.address);
 
-  const { mutate: updateNotification, isPending: isUpdating } =
+  const { mutate: updateNotification, isPending: isNotifUpdating } =
     useUpdateNotification();
+  const { mutate: updateRequest, isPending: isReqUpdating } =
+    useUpdateRequest();
 
   const handleApprove = async (notification: UserNotification) => {
     try {
-      updateNotification({
-        notification_id: notification.id,
-        status: "approved",
-        org_address: notification.orgAddress,
+      const transaction = grantAccess({
+        contract: contract,
+        tokenId: BigInt(notification.tokenId),
+        user: notification.orgAddress,
       });
-
-      //TODO: add updateRequest here as well
-
-      const transaction = prepareContractCall({
-        contract,
-        method: "function grantAccess(uint256 tokenId, address user)",
-        params: [BigInt(notification.tokenId), notification.orgAddress],
-      });
-      sendTransaction(transaction);
-
-      toast({
-        title: "Success",
-        description: `Successfully granted access to ${notification.orgAddress.substring(0, 6)} for Token ID ${notification.tokenId}`,
-      });
+      sendTransaction(transaction)
+        .then((result) => {
+          updateNotification({
+            notification_id: notification.id,
+            status: "approved",
+            org_address: notification.orgAddress,
+          });
+          updateRequest({
+            org_wallet_address: notification.orgAddress,
+            token_id: notification.tokenId,
+            status: "approved",
+          });
+          toast({
+            title: "Success",
+            description: `Successfully granted access to $${notification.orgAddress.substring(0, 6)} (${result.transactionHash})`,
+          });
+        })
+        .catch((err) => {
+          console.error(err);
+          toast({ title: "Error", description: "Failed to grant access" });
+        });
     } catch (error) {
       console.error(error);
       toast({
@@ -74,8 +87,11 @@ function UserNotificationsPage() {
         org_address: notification.orgAddress,
         status: "denied",
       });
-
-      //TODO: add updateRequest here as well
+      updateRequest({
+        org_wallet_address: notification.orgAddress,
+        token_id: notification.tokenId,
+        status: "denied",
+      });
       toast({
         title: "Success",
         description: "Successfully denied request",
@@ -86,16 +102,7 @@ function UserNotificationsPage() {
     }
   };
 
-  if (!activeAccount)
-    return (
-      <div className="">
-        <Alert className="bg-red-300">
-          <WalletIcon className="h-4 w-4" />
-          <AlertTitle>Missing crypto wallet</AlertTitle>
-          <AlertDescription>Please connect your wallet first!</AlertDescription>
-        </Alert>
-      </div>
-    );
+  if (!activeAccount) return <MissingWalletComponent />;
 
   if (status === "pending")
     return <LoadingStateComponent content="Loading notifications..." />;
@@ -153,7 +160,7 @@ function UserNotificationsPage() {
                   variant="noShadow"
                   className="flex flex-grow bg-green-300 "
                   onClick={() => handleApprove(notification)}
-                  disabled={isUpdating}
+                  disabled={isNotifUpdating || isReqUpdating}
                 >
                   Approve
                 </Button>
@@ -161,7 +168,7 @@ function UserNotificationsPage() {
                   variant="noShadow"
                   className="flex flex-grow bg-red-300"
                   onClick={() => handleDeny(notification)}
-                  disabled={isUpdating}
+                  disabled={isNotifUpdating || isReqUpdating}
                 >
                   Deny
                 </Button>
