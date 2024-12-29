@@ -80,7 +80,6 @@ export async function GET(request: NextRequest) {
         { status: 404 },
       );
 
-    let records;
     if (userData.role === "medical_organization") {
       const orgRecords = await db
         .select({

@@ -71,7 +71,7 @@ export const useCreateRequest = () => {
       return data;
     },
     onSettled: () => {
-      queryClient.refetchQueries({ queryKey: ["access-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["access-requests"] });
     },
   });
 };
@@ -94,9 +94,29 @@ export const useUpdateRequest = () => {
       return data;
     },
     onSettled: (data, err, variables) => {
-      queryClient.refetchQueries({
+      queryClient.invalidateQueries({
         queryKey: ["access-requests"],
       });
+    },
+  });
+};
+
+type DeleteRequestData = {
+  request_id: string;
+};
+
+export const useDeleteRequest = () => {
+  const queryClient = useQueryClient();
+  return useMutation<SelectRequest, Error, DeleteRequestData>({
+    mutationFn: async (deleteData) => {
+      const response = await axios.delete<SelectRequest>(
+        `/api/test/access-request?id=${deleteData.request_id}`,
+      );
+      const data = response.data;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["access-requests"] });
     },
   });
 };
