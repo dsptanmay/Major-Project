@@ -77,7 +77,8 @@ export const useCreateRequest = () => {
 };
 
 type UpdateRequestData = {
-  request_id: string;
+  token_id: string;
+  org_wallet_address: string;
   status: "approved" | "denied";
 };
 
@@ -93,7 +94,7 @@ export const useUpdateRequest = () => {
       const data: SelectRequest = response.data;
       return data;
     },
-    onSettled: (data, err, variables) => {
+    onSettled: () => {
       queryClient.invalidateQueries({
         queryKey: ["access-requests"],
       });

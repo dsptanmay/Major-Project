@@ -84,10 +84,9 @@ export const useUpdateNotification = () => {
       const data: SelectNotification = response.data;
       return data;
     },
-    onSettled: (data, error, variables) => {
+    onSettled: () => {
       queryClient.invalidateQueries({
-        queryKey: ["notifications", variables.org_address],
-        exact: true,
+        queryKey: ["notifications"],
       });
     },
   });

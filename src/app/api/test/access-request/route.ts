@@ -153,25 +153,38 @@ export async function GET(request: NextRequest) {
 
 type AccessPatchRequest = {
   token_id: string;
+  org_wallet_address: string;
   status: "approved" | "denied";
 };
 export async function PATCH(request: NextRequest) {
   try {
     const body: AccessPatchRequest = await request.json();
-    const { token_id, status } = body;
+    const { token_id, status, org_wallet_address } = body;
     const recordData = await db.query.medicalRecords.findFirst({
       where: (record, { eq }) => eq(record.token_id, token_id),
       columns: {
         id: true,
       },
     });
-    if (!recordData)
+    const orgData = await db.query.users.findFirst({
+      where: (record, { eq }) => eq(record.wallet_address, org_wallet_address),
+      columns: {
+        id: true,
+      },
+    });
+
+    if (!recordData || !orgData)
       return NextResponse.json({ error: "Invalid Token ID" }, { status: 400 });
 
     const updatedRecord = await db
       .update(accessRequests)
       .set({ status: status, processed_at: new Date() })
-      .where(eq(accessRequests.record_id, recordData.id))
+      .where(
+        and(
+          eq(accessRequests.record_id, recordData.id),
+          eq(accessRequests.organization_id, orgData.id),
+        ),
+      )
       .returning();
 
     return NextResponse.json(updatedRecord, { status: 201 });
