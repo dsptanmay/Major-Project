@@ -2,31 +2,56 @@ import { SelectRequest } from "@/db/schema_2";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
-export const useGetRequestsUser = (walletAddress?: string) => {
-  return useQuery<SelectRequest, Error>({
+export const useGetRequestsOrg = (walletAddress?: string) => {
+  return useQuery<
+    {
+      requestId: string;
+      recordTitle: string;
+      recordDescription: string;
+      recordTokenId: string;
+      requestedAt: string;
+      processedAt: string;
+    }[],
+    Error
+  >({
     queryKey: ["access-requests", walletAddress],
     enabled: !!walletAddress,
     queryFn: async () => {
-      if (!walletAddress) throw new Error("Wallet Address is required");
-      const response = await axios.get(
-        `/api/test/access-requests?userAddress=${walletAddress}`,
-      );
-      const data: SelectRequest = response.data;
+      const response = await axios.get<
+        {
+          requestId: string;
+          recordTitle: string;
+          recordDescription: string;
+          recordTokenId: string;
+          requestedAt: string;
+          processedAt: string;
+        }[]
+      >(`/api/test/access-request?walletAddress=${walletAddress}`);
+      const data = response.data;
       return data;
     },
   });
 };
 
-export const useGetRequestsOrganization = (walletAddress?: string) => {
-  return useQuery<SelectRequest, Error>({
+export const useGetRequestsUser = (walletAddress?: string) => {
+  return useQuery<
+    {
+      requestId: string;
+      recordTitle: string;
+      recordTokenId: string;
+      processedAt: string | null;
+      organizationName: string;
+      organizationWallet: string;
+    }[],
+    Error
+  >({
     queryKey: ["access-requests", walletAddress],
     enabled: !!walletAddress,
     queryFn: async () => {
-      if (!walletAddress) throw new Error("Wallet Address is required");
       const response = await axios.get(
-        `/api/test/access-requests?orgAddress=${walletAddress}`,
+        `/api/test/access-request?walletAddress=${walletAddress}`,
       );
-      const data: SelectRequest = response.data;
+      const data = response.data;
       return data;
     },
   });
@@ -46,7 +71,7 @@ export const useCreateRequest = () => {
       return data;
     },
     onSettled: () => {
-      queryClient.refetchQueries({ queryKey: ["access-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["access-requests"] });
     },
   });
 };
@@ -69,9 +94,29 @@ export const useUpdateRequest = () => {
       return data;
     },
     onSettled: (data, err, variables) => {
-      queryClient.refetchQueries({
+      queryClient.invalidateQueries({
         queryKey: ["access-requests"],
       });
+    },
+  });
+};
+
+type DeleteRequestData = {
+  request_id: string;
+};
+
+export const useDeleteRequest = () => {
+  const queryClient = useQueryClient();
+  return useMutation<SelectRequest, Error, DeleteRequestData>({
+    mutationFn: async (deleteData) => {
+      const response = await axios.delete<SelectRequest>(
+        `/api/test/access-request?id=${deleteData.request_id}`,
+      );
+      const data = response.data;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["access-requests"] });
     },
   });
 };

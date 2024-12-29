@@ -67,7 +67,7 @@ function ProfilePage() {
     );
 
   return (
-    <div className="flex w-full max-w-md flex-col rounded-base border-[3px] border-border bg-white p-5 shadow-light">
+    <div className="flex w-full max-w-md flex-col rounded-base border-2 border-border bg-white p-5 shadow-light">
       <Card className="bg-[#fff4e0] shadow-none">
         <CardHeader>
           <CardTitle className="flex flex-col items-center space-y-4 ">

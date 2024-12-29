@@ -1,12 +1,10 @@
 "use client";
 import React from "react";
-import { useActiveAccount } from "thirdweb/react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Wallet } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
+
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+
 import {
   Form,
   FormControl,
@@ -15,11 +13,18 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Toaster } from "@/components/ui/toaster";
+import { AlertCircleIcon, CheckIcon, Wallet } from "lucide-react";
+
 import { useToast } from "@/hooks/use-toast";
+import { useCreateRequest } from "@/hooks/useRequests";
+
+import { useActiveAccount } from "thirdweb/react";
+import { useCreateNotification } from "@/hooks/useNotifications";
 
 export default function RequestAccessPage() {
   const { toast } = useToast();
@@ -29,6 +34,16 @@ export default function RequestAccessPage() {
       .string()
       .min(10, { message: "Must mention reason for request" }),
   });
+  const {
+    mutate: createRequest,
+    status: createRequestStatus,
+    error: createRequestError,
+  } = useCreateRequest();
+  const {
+    mutate: createNotification,
+    status: createNotifStatus,
+    error: createNotifError,
+  } = useCreateNotification();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -38,29 +53,26 @@ export default function RequestAccessPage() {
     },
   });
   const activeAccount = useActiveAccount();
-  const { user } = useUser();
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const response = await fetch("/api/notifications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          org_address: activeAccount?.address,
-          org_name: user?.username,
-          nft_token_id: values.token_id,
-          comments: values.comments,
-        }),
+      createNotification({
+        token_id: values.token_id,
+        message: values.comments,
+        org_wallet_address: activeAccount!.address,
       });
-      if (response.ok) {
+      createRequest({
+        token_id: values.token_id,
+        org_wallet_address: activeAccount!.address,
+      });
+      if (createRequestStatus === "success" && createNotifStatus === "success")
         toast({
           title: "Success",
-          description: `Successfully sent notification for Token ID ${values.token_id}`,
+          description: `Successfully requested access for Token ID ${values.token_id}`,
         });
-      }
     } catch (error) {
       console.error(error);
-      toast({ title: "Error", description: "Failed to send notification" });
+      toast({ title: "Error", description: "Failed to send request" });
     }
   };
   if (!activeAccount) {
@@ -76,7 +88,7 @@ export default function RequestAccessPage() {
   }
   return (
     <div
-      className="flex w-full max-w-6xl flex-col space-y-5 border-[3px] border-border bg-white p-10 shadow-light"
+      className="flex w-full max-w-6xl flex-col space-y-5 border-[3px] border-border bg-white px-10 py-10 shadow-light"
       suppressHydrationWarning
     >
       <h2>
@@ -118,18 +130,48 @@ export default function RequestAccessPage() {
                 <FormControl>
                   <Textarea
                     placeholder="Enter a message for the user"
+                    className="resize-none"
                     {...field}
                   />
                 </FormControl>
               </FormItem>
             )}
           />
-          <Button type="submit" className="w-full" variant="noShadow">
-            Submit
-          </Button>
+          {createNotifStatus !== "success" &&
+            createRequestStatus !== "success" && (
+              <Button type="submit" className="w-full" variant="noShadow">
+                {createRequestStatus === "pending" ||
+                createNotifStatus === "pending"
+                  ? "Creating Request..."
+                  : "Submit"}
+              </Button>
+            )}
         </form>
+        <Toaster />
       </Form>
-      <Toaster />
+      {createNotifStatus === "success" && createRequestStatus === "success" && (
+        <Alert className="bg-green-300">
+          <CheckIcon className="size-4" />
+          <AlertTitle>Success</AlertTitle>
+          <AlertDescription>
+            Successfully requested access for document
+          </AlertDescription>
+        </Alert>
+      )}
+      {createRequestStatus === "error" && (
+        <Alert>
+          <AlertCircleIcon className="size-4" />
+          <AlertTitle>Failed to request access</AlertTitle>
+          <AlertDescription>{createRequestError.message}</AlertDescription>
+        </Alert>
+      )}
+      {createNotifStatus === "error" && (
+        <Alert>
+          <AlertCircleIcon className="size-4" />
+          <AlertTitle>Failed to send notification</AlertTitle>
+          <AlertDescription>{createNotifError.message}</AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 }

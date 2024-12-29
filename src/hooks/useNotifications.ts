@@ -48,9 +48,14 @@ export const useOrgNotifications = (walletAddress?: string) => {
   });
 };
 
+type InsertNotificationData = {
+  org_wallet_address: string;
+  token_id: string;
+  message: string;
+};
 export const useCreateNotification = () => {
   const queryClient = useQueryClient();
-  return useMutation<SelectNotification, Error, InsertNotification>({
+  return useMutation<SelectNotification, Error, InsertNotificationData>({
     mutationFn: async (newUser) => {
       const response = await axios.post("/api/test/notifications", newUser);
       const data: SelectNotification = response.data;
@@ -72,7 +77,10 @@ export const useUpdateNotification = () => {
   const queryClient = useQueryClient();
   return useMutation<SelectNotification, Error, UpdateNotificationData>({
     mutationFn: async (updateData) => {
-      const response = await axios.patch("/api/test/notifications", updateData);
+      const response = await axios.patch("/api/test/notifications", {
+        notification_id: updateData.notification_id,
+        status: updateData.status,
+      });
       const data: SelectNotification = response.data;
       return data;
     },

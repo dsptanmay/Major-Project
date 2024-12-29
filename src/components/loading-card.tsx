@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 function LoadingStateComponent({ content }: { content: string }) {
   return (
     <>
-      <Skeleton className="flex items-center space-x-5 px-5 py-10 shadow-light">
+      <Skeleton className="flex w-full max-w-6xl flex-col items-center px-10 py-10 shadow-light">
         <svg
           aria-hidden="true"
           className="h-8 w-8 animate-spin fill-blue-600 text-gray-200 dark:text-gray-600"
@@ -21,7 +21,7 @@ function LoadingStateComponent({ content }: { content: string }) {
             fill="currentFill"
           />
         </svg>
-        <span className="font-bold">{content}</span>
+        <span className="text-2xl font-bold">{content}</span>
       </Skeleton>
     </>
   );

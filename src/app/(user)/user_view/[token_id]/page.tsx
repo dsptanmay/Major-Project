@@ -170,7 +170,7 @@ function UserViewPage({ params }: { params: { token_id: string } }) {
       </div>
     );
   return (
-    <div className="flex w-full max-w-6xl flex-col space-y-5 border-[3px] border-border bg-white p-5 shadow-light">
+    <div className="flex w-full max-w-6xl flex-col space-y-5 border-2 border-border bg-white p-5 shadow-light">
       <h1>Document for Token ID {tokenId}</h1>
       {isFetched && (
         <Button className="w-full" onClick={handleDecryptPdf}>
