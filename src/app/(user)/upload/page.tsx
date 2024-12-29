@@ -112,11 +112,12 @@ function UserUploadPage() {
     const { encryption_key, ipfs_link } = await handleEncryptionAndUpload(
       formData.file,
     );
+    if (!tokenId) return;
     if (encryption_key && ipfs_link) {
       try {
         const uploadData = {
           wallet_address: activeAccount!.address,
-          token_id: tokenId!.toString(),
+          token_id: tokenId.toString(),
           encryption_key: encryption_key,
           title: formData.title,
           description: formData.description,
