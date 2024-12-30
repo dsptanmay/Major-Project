@@ -190,7 +190,6 @@ function UserNotificationsPage() {
           ))}
         </TableBody>
       </Table>
-      <Toaster />
     </div>
   );
 }

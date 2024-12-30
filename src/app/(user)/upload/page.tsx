@@ -257,7 +257,6 @@ function UserUploadPage() {
           </AlertDescription>
         </Alert>
       )}
-      <Toaster />
     </div>
   );
 }

@@ -147,7 +147,6 @@ export default function RequestAccessPage() {
               </Button>
             )}
         </form>
-        <Toaster />
       </Form>
       {createNotifStatus === "success" && createRequestStatus === "success" && (
         <Alert className="bg-green-300">

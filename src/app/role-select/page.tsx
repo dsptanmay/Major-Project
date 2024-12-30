@@ -121,7 +121,6 @@ export default function RoleSelectionPage() {
           )}
         </CardFooter>
       </Card>
-      <Toaster />
     </div>
   );
 }

@@ -224,7 +224,6 @@ export default function OrgNotificationsPage() {
           ))}
         </TableBody>
       </Table>
-      <Toaster />
     </div>
   );
 }

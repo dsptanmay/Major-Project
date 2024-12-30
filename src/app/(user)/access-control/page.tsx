@@ -145,7 +145,6 @@ function AccessControlPage() {
           ))}
         </TableBody>
       </Table>
-      <Toaster />
     </div>
   );
 }
