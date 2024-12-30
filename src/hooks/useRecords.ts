@@ -16,6 +16,7 @@ export const useGetRecords = (walletAddress?: string) => {
       return data;
     },
     enabled: !!walletAddress,
+    refetchOnWindowFocus: true,
   });
 };
 

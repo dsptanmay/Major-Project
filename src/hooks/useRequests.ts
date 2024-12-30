@@ -1,4 +1,6 @@
+import { contract } from "@/app/client";
 import { SelectRequest } from "@/db/schema_2";
+import { checkAccessPermission } from "@/thirdweb/11155111/functions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
@@ -118,6 +120,21 @@ export const useDeleteRequest = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["access-requests"] });
+    },
+  });
+};
+
+export const useCheckAccess = (walletAddress?: string, tokenId?: string) => {
+  return useQuery<boolean, Error>({
+    queryKey: ["check-access", { walletAddress, tokenId }],
+    enabled: !!walletAddress && !!tokenId,
+    queryFn: async () => {
+      const result = await checkAccessPermission({
+        contract: contract,
+        tokenId: BigInt(tokenId!),
+        user: walletAddress!,
+      });
+      return result;
     },
   });
 };
