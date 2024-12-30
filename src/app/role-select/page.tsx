@@ -1,6 +1,9 @@
 "use client";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+
 import { Button } from "@/components/ui/button";
+import MissingWalletComponent from "@/components/missing-wallet";
 import {
   Card,
   CardContent,
@@ -16,14 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Toaster } from "@/components/ui/toaster";
-import { userRoleEnum } from "@/db/schema_2";
-import { useToast } from "@/hooks/use-toast";
-import { useCreateUser } from "@/hooks/useUsers";
+
 import { useUser } from "@clerk/nextjs";
-import { Wallet } from "lucide-react";
-import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import { userRoleEnum } from "@/db/schema";
+
+import { useToast } from "@/hooks/use-toast";
+import { useCreateUser } from "@/hooks/users/use-create-user";
+
 import { useActiveAccount } from "thirdweb/react";
 
 export default function RoleSelectionPage() {
@@ -42,11 +44,12 @@ export default function RoleSelectionPage() {
     useState<(typeof userRoleEnum.enumValues)[number]>("user");
 
   const handleCreateUser = () => {
+    if (!user?.username) return;
     const newUser = {
       wallet_address: activeAccount!.address,
-      role: role as (typeof userRoleEnum.enumValues)[number],
-      username: user!.username!,
-      clerk_user_id: user!.id,
+      role: role,
+      username: user.username,
+      created_at: new Date(),
     };
     try {
       createUser(newUser);
@@ -54,8 +57,11 @@ export default function RoleSelectionPage() {
         toast({
           title: "Success",
           description: `Successfully created user with role ${role}`,
+          duration: 1500,
         });
-        router.push("/dashboard");
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 1500);
       }
     } catch (error) {
       console.error(createError);
@@ -63,20 +69,11 @@ export default function RoleSelectionPage() {
     }
   };
 
-  if (!activeAccount)
-    return (
-      <div>
-        <Alert className="bg-red-300">
-          <Wallet className="h-4 w-4" />
-          <AlertTitle>Missing Wallet</AlertTitle>
-          <AlertDescription>Please connect your wallet first!</AlertDescription>
-        </Alert>
-      </div>
-    );
+  if (!activeAccount) return <MissingWalletComponent />;
 
   return (
     <div>
-      <Card className="w-[350px]">
+      <Card className="w-[350px] bg-[#fff4e0]">
         <CardHeader>
           <CardTitle>Select Role</CardTitle>
           <CardDescription>
@@ -111,7 +108,7 @@ export default function RoleSelectionPage() {
         <CardFooter className="flex w-full">
           {status !== "success" && (
             <Button
-              className="w-full"
+              className="w-full bg-[#fd9745]"
               onClick={handleCreateUser}
               variant="default"
               disabled={isPending}
