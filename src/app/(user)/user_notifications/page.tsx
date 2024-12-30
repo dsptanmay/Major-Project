@@ -31,7 +31,8 @@ import { useUpdateRequest } from "@/hooks/useRequests";
 function UserNotificationsPage() {
   const activeAccount = useActiveAccount();
   const { toast } = useToast();
-  const { mutateAsync: sendTransaction } = useSendTransaction();
+  const { mutateAsync: sendTransaction, status: transactionStatus } =
+    useSendTransaction();
 
   const {
     data: notifications,
@@ -160,9 +161,17 @@ function UserNotificationsPage() {
                   variant="noShadow"
                   className="flex flex-grow bg-green-300 "
                   onClick={() => handleApprove(notification)}
-                  disabled={isNotifUpdating || isReqUpdating}
+                  disabled={
+                    isNotifUpdating ||
+                    isReqUpdating ||
+                    transactionStatus === "pending"
+                  }
                 >
-                  Approve
+                  {transactionStatus === "pending" ||
+                  isNotifUpdating ||
+                  isReqUpdating
+                    ? "Approving..."
+                    : "Approve"}
                 </Button>
                 <Button
                   variant="noShadow"
@@ -170,7 +179,11 @@ function UserNotificationsPage() {
                   onClick={() => handleDeny(notification)}
                   disabled={isNotifUpdating || isReqUpdating}
                 >
-                  Deny
+                  {transactionStatus === "pending" ||
+                  isNotifUpdating ||
+                  isReqUpdating
+                    ? "Denying..."
+                    : "Deny"}
                 </Button>
               </TableCell>
             </TableRow>

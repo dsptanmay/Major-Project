@@ -1,7 +1,10 @@
 "use client";
-import LoadingStateComponent from "@/components/loading-card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import React from "react";
 import { Button } from "@/components/ui/button";
+import LoadingStateComponent from "@/components/loading-card";
+import MissingWalletComponent from "@/components/missing-wallet";
+import { AlertCircle, CircleAlert, InfoIcon, Library } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Card,
   CardContent,
@@ -9,23 +12,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useGetRecords } from "@/hooks/useRecords";
-import {
-  AlertCircle,
-  CircleAlert,
-  InfoIcon,
-  Library,
-  Wallet,
-} from "lucide-react";
-import Link from "next/link";
-import React, { useEffect, useState } from "react";
-import { useActiveAccount } from "thirdweb/react";
 
-interface RecordData {
-  title: string;
-  token_id: string;
-  description: string;
-}
+import Link from "next/link";
+
+import { useActiveAccount } from "thirdweb/react";
+import { useGetRecords } from "@/hooks/useRecords";
+import { format } from "date-fns";
 
 function RecordsPageContent() {
   const activeAccount = useActiveAccount();
@@ -35,16 +27,7 @@ function RecordsPageContent() {
     error,
   } = useGetRecords(activeAccount?.address);
 
-  if (!activeAccount)
-    return (
-      <div>
-        <Alert className="bg-red-300">
-          <Wallet className="h-4 w-4" />
-          <AlertTitle>Missing Crypto Wallet</AlertTitle>
-          <AlertDescription>Please connect your wallet first!</AlertDescription>
-        </Alert>
-      </div>
-    );
+  if (!activeAccount) return <MissingWalletComponent />;
 
   if (status === "pending")
     return <LoadingStateComponent content="Loading records..." />;
@@ -95,7 +78,11 @@ function RecordsPageContent() {
               <CardTitle className="text-gray-800">{record.title}</CardTitle>
               <CardDescription>{record.description}</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex w-full flex-col space-y-5">
+              <div className="flex justify-between text-sm font-base">
+                <h1>{format(record.uploaded_at, "dd MMM, yyyy")}</h1>
+                <h2>#{record.token_id}</h2>
+              </div>
               <Link href={`/user_view/${record.token_id}`} prefetch={true}>
                 <Button className="w-full bg-[#fd9745]">View Document</Button>
               </Link>

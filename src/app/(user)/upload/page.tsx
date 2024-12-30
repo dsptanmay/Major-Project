@@ -131,7 +131,7 @@ function UserUploadPage() {
           .then((result) => {
             toast({
               title: "Success",
-              description: `Minted NFT successfully `,
+              description: "Minted NFT successfully",
             });
             createRecord(uploadData);
             setIsProcessing(false);
@@ -253,7 +253,7 @@ function UserUploadPage() {
           <CheckCircleIcon className="size-4" />
           <AlertTitle>Transaction Hash</AlertTitle>
           <AlertDescription>
-            {transactionResult.transactionHash}
+            <code>{transactionResult.transactionHash}</code>
           </AlertDescription>
         </Alert>
       )}
