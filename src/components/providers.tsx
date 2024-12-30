@@ -40,7 +40,7 @@ function getQueryClient() {
 export default function Providers({ children }: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
   return (
-    <ClerkProvider afterSignOutUrl="/">
+    <ClerkProvider afterSignOutUrl="/" signInForceRedirectUrl="/dashboard">
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </ClerkProvider>
   );
