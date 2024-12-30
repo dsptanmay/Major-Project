@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 export function useGetIpfs(walletAddress?: string, tokenId?: string) {
   return useQuery({
     queryKey: ["ipfs", { walletAddress, tokenId }],
-    enabled: !!walletAddress && !!tokenId,
+    enabled: false,
     queryFn: async () => {
       const data = await getIPFSHash({
         contract: contract,

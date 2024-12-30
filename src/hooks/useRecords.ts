@@ -1,8 +1,8 @@
 import { contract } from "@/app/client";
 import { SelectRecord } from "@/db/schema_2";
+import { nextTokenIdToMint } from "@/thirdweb/11155111/functions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { readContract } from "thirdweb";
 
 export const useGetRecords = (walletAddress?: string) => {
   return useQuery<SelectRecord[], Error>({
@@ -16,6 +16,7 @@ export const useGetRecords = (walletAddress?: string) => {
       return data;
     },
     enabled: !!walletAddress,
+    refetchOnWindowFocus: true,
   });
 };
 
@@ -49,12 +50,8 @@ export const useGetTokenID = () => {
     queryKey: ["token-id"],
     enabled: false,
     queryFn: async () => {
-      const tokenId = await readContract({
-        contract,
-        method: "function nextTokenIdToMint() view returns (uint256)",
-        params: [],
-      });
-      return tokenId;
+      const data = await nextTokenIdToMint({ contract });
+      return data;
     },
   });
 };

@@ -8,23 +8,25 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import MissingWalletComponent from "@/components/missing-wallet";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, CheckCircleIcon, Wallet } from "lucide-react";
+import { AlertCircle, CheckCircleIcon } from "lucide-react";
 
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useCreateRecord, useGetTokenID } from "@/hooks/useRecords";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
-import { upload } from "thirdweb/storage";
-import { prepareContractCall } from "thirdweb";
 import { useActiveAccount, useSendTransaction } from "thirdweb/react";
+import { mintNFT } from "@/thirdweb/11155111/functions";
 import { client, contract } from "@/app/client";
+import { upload } from "thirdweb/storage";
 
 import { useToast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
 
 const formSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
@@ -45,7 +47,11 @@ function UserUploadPage() {
     },
   });
   const { toast } = useToast();
-  const { mutate: sendTransaction } = useSendTransaction();
+  const {
+    mutateAsync: sendTransaction,
+    status: transactionStatus,
+    data: transactionResult,
+  } = useSendTransaction();
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
   const activeAccount = useActiveAccount();
@@ -106,24 +112,37 @@ function UserUploadPage() {
     const { encryption_key, ipfs_link } = await handleEncryptionAndUpload(
       formData.file,
     );
+    if (!tokenId) return;
     if (encryption_key && ipfs_link) {
       try {
-        const transaction = prepareContractCall({
-          contract,
-          method:
-            "function mintNFT(address to, string ipfsHash) returns (uint256)",
-          params: [activeAccount!.address, ipfs_link],
-        });
-        sendTransaction(transaction);
         const uploadData = {
           wallet_address: activeAccount!.address,
-          token_id: tokenId!.toString(),
+          token_id: tokenId.toString(),
           encryption_key: encryption_key,
           title: formData.title,
           description: formData.description,
         };
-        createRecord(uploadData);
-        setIsProcessing(false);
+        const transaction = mintNFT({
+          contract: contract,
+          ipfsHash: ipfs_link,
+          to: activeAccount!.address,
+        });
+        sendTransaction(transaction)
+          .then((result) => {
+            toast({
+              title: "Success",
+              description: "Minted NFT successfully",
+            });
+            createRecord(uploadData);
+            setIsProcessing(false);
+          })
+          .catch((err) => {
+            console.error(err);
+            toast({ title: "Error", description: "Failed to Mint NFT" });
+          })
+          .finally(() => {
+            setIsProcessing(false);
+          });
       } catch (error) {
         console.error(error);
         setIsProcessing(false);
@@ -139,16 +158,7 @@ function UserUploadPage() {
     }
   };
 
-  if (!activeAccount)
-    return (
-      <div>
-        <Alert className="bg-red-300 ">
-          <Wallet className="size-4" />
-          <AlertTitle>Missing Wallet</AlertTitle>
-          <AlertDescription>Please connect your wallet first!</AlertDescription>
-        </Alert>
-      </div>
-    );
+  if (!activeAccount) return <MissingWalletComponent />;
 
   return (
     <div className="flex w-full max-w-6xl flex-col space-y-5 rounded-base border-2 border-border bg-white p-5 shadow-light">
@@ -214,9 +224,15 @@ function UserUploadPage() {
             <Button
               type="submit"
               className="w-full"
-              disabled={createRecordStatus === "pending" || isProcessing}
+              disabled={
+                createRecordStatus === "pending" ||
+                isProcessing ||
+                transactionStatus === "pending"
+              }
             >
-              {createRecordStatus === "pending" || isProcessing
+              {createRecordStatus === "pending" ||
+              isProcessing ||
+              transactionStatus === "pending"
                 ? "Minting NFT..."
                 : "Mint NFT"}
             </Button>
@@ -232,13 +248,16 @@ function UserUploadPage() {
           </div>
         </Alert>
       )}
-      {createRecordStatus === "success" && (
+      {createRecordStatus === "success" && transactionStatus === "success" && (
         <Alert className="bg-green-300">
           <CheckCircleIcon className="size-4" />
-          <AlertTitle>Success</AlertTitle>
-          <AlertDescription>Minted NFT successfully!</AlertDescription>
+          <AlertTitle>Transaction Hash</AlertTitle>
+          <AlertDescription>
+            <code>{transactionResult.transactionHash}</code>
+          </AlertDescription>
         </Alert>
       )}
+      <Toaster />
     </div>
   );
 }

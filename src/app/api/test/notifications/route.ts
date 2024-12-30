@@ -144,6 +144,7 @@ export async function PATCH(request: NextRequest) {
     const updatedNotification = await db
       .update(notifications)
       .set({ status: status })
+      .where(eq(notifications.id, notification_id))
       .returning();
     return NextResponse.json(updatedNotification[0], { status: 201 });
   } catch (error) {
