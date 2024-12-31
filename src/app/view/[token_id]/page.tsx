@@ -12,6 +12,7 @@ import { useActiveAccount } from "thirdweb/react";
 
 import { useGetIpfs } from "@/hooks/useIpfs";
 import { useCheckAccess } from "@/hooks/useRequests";
+import { useGetRecord } from "@/hooks/medical-records/use-get-record";
 
 function TestUserView({ params }: { params: { token_id: string } }) {
   const [pdfUrl, setPdfUrl] = useState<string | undefined>(undefined);
@@ -22,6 +23,11 @@ function TestUserView({ params }: { params: { token_id: string } }) {
   const activeAccount = useActiveAccount();
 
   const ipfsQuery = useGetIpfs(activeAccount?.address, params.token_id);
+  const {
+    data: recordData,
+    status: recordStatus,
+    error: recordError,
+  } = useGetRecord(params.token_id);
   const { data: hasAccess, status: accessStatus } = useCheckAccess(
     activeAccount?.address,
     params.token_id,
@@ -90,10 +96,10 @@ function TestUserView({ params }: { params: { token_id: string } }) {
 
   const handleDecrypt = async () => {
     setIsDecrypting(true);
-    const { data } = await ipfsQuery.refetch();
-    if (!data) return;
-    const ipfsUrl = resolveScheme({ uri: data, client: client });
-    decryptPDF(ipfsUrl, "x")
+    const { data: ipfsLink } = await ipfsQuery.refetch();
+    if (!ipfsLink || !recordData) return;
+    const ipfsUrl = resolveScheme({ uri: ipfsLink, client: client });
+    decryptPDF(ipfsUrl, recordData.encryption_key)
       .then((result) => {
         setDocumentName(result.original_name);
         setPdfUrl(result.pdf_url);
@@ -106,21 +112,26 @@ function TestUserView({ params }: { params: { token_id: string } }) {
       });
   };
 
-  if (accessStatus === "pending")
+  if (accessStatus === "pending" || recordStatus === "pending")
     return <LoadingStateComponent content="Checking Access..." />;
-  if (accessStatus === "error")
+  if (accessStatus === "error" || recordStatus === "error") {
     return (
       <Alert className="bg-rose-500">
         <AlertTitle>Error</AlertTitle>
         <AlertDescription>Failed to check access</AlertDescription>
       </Alert>
     );
+  }
 
   if (!hasAccess) router.push("/dashboard");
 
   return (
     <div className="flex w-full max-w-6xl flex-col space-y-5 border-2 border-border bg-white p-5 shadow-light">
-      <h1>Document for Token ID {params.token_id}</h1>
+      <h1 className="font-bold">Document for Token ID {params.token_id}</h1>
+      <div className="flex justify-between">
+        <h2 className="text-sm font-base">{recordData.title}</h2>
+        <h2 className="text-sm font-base">{recordData.id}</h2>
+      </div>
       {!pdfUrl && (
         <Button
           className="w-full"
