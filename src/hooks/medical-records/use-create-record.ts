@@ -3,7 +3,9 @@ import { InferRequestType, InferResponseType } from "hono";
 
 import { useToast } from "@/hooks/use-toast";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
+import { nextTokenIdToMint } from "@/thirdweb/11155111/functions";
+import { contract } from "@/app/client";
 
 type ResponseType = InferResponseType<
   typeof apiClient.api.medical_records.$post,
@@ -40,4 +42,16 @@ export const useCreateRecord = () => {
     },
   });
   return mutation;
+};
+
+export const useGetTokenID = () => {
+  const query = useQuery({
+    queryKey: ["token-id"],
+    enabled: false,
+    queryFn: async () => {
+      const data = await nextTokenIdToMint({ contract: contract });
+      return data;
+    },
+  });
+  return query;
 };
