@@ -1,13 +1,8 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React from "react";
+import Link from "next/link";
+
 import { useActiveAccount } from "thirdweb/react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  AlertCircle,
-  ExternalLink,
-  SquareArrowUpRightIcon,
-  Wallet,
-} from "lucide-react";
 import {
   Table,
   TableBody,
@@ -17,19 +12,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import { AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
-import { useToast } from "@/hooks/use-toast";
-import { Toaster } from "@/components/ui/toaster";
+import { Button } from "@/components/ui/button";
+import LoadingStateComponent from "@/components/loading-card";
+import MissingWalletComponent from "@/components/missing-wallet";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
 import {
   OrgNotification,
   useDeleteNotification,
-  useOrgNotifications,
 } from "@/hooks/useNotifications";
-import LoadingStateComponent from "@/components/loading-card";
-import axios from "axios";
-import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { useGetOrgNotifications } from "@/hooks/notifications/use-get-notifications";
+
+import { useUser } from "@clerk/nextjs";
 
 type Notification = {
   user_address: string;
@@ -61,8 +58,9 @@ const StatusBadge: React.FC<{ status: Notification["status"] }> = ({
 
 export default function OrgNotificationsPage() {
   const activeAccount = useActiveAccount();
+  const { user } = useUser();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+
   const {
     mutate: deleteNotification,
     status: deleteStatus,
@@ -74,35 +72,7 @@ export default function OrgNotificationsPage() {
     data: notifications,
     status: fetchStatus,
     error: fetchError,
-  } = useOrgNotifications(activeAccount?.address);
-
-  // const handleDelete = async (notification: any) => {
-  //   try {
-  //     const response = await fetch(
-  //       `/api/notifications?orgAddress=${activeAccount!.address}&userAddress=${notification.user_address}&tokenId=${notification.token_id}`,
-  //       {
-  //         method: "DELETE",
-  //         headers: { "Content-Type": "application/json" },
-  //       },
-  //     );
-
-  //     if (response.ok) {
-  //       toast({
-  //         title: "Success",
-  //         description: "Notification deleted successfully",
-  //       });
-  //       setNotifications((prevNotifs) =>
-  //         prevNotifs.filter((n) => n != notification),
-  //       );
-  //     }
-  //   } catch (error) {
-  //     toast({
-  //       title: "Error",
-  //       description: "Failed in deleteing notification",
-  //     });
-  //     console.error(error);
-  //   }
-  // };
+  } = useGetOrgNotifications(user?.id);
 
   const handleDelete = async (notification: OrgNotification) => {
     try {
@@ -118,20 +88,16 @@ export default function OrgNotificationsPage() {
     } catch (error) {
       console.error(error, deleteError?.message);
 
-      toast({ title: "Error", description: "Failed to delete notification" });
+      toast({
+        title: "Error",
+        description: "Failed to delete notification",
+        variant: "destructive",
+      });
     }
   };
 
   if (!activeAccount) {
-    return (
-      <div>
-        <Alert className="bg-red-300">
-          <Wallet className="h-4 w-4" />
-          <AlertTitle>Missing Crypto Wallet</AlertTitle>
-          <AlertDescription>Please connect your wallet first!</AlertDescription>
-        </Alert>
-      </div>
-    );
+    return <MissingWalletComponent />;
   }
 
   if (fetchStatus === "pending")
@@ -176,18 +142,18 @@ export default function OrgNotificationsPage() {
         <TableCaption>A list of your recent notifications</TableCaption>
         <TableHeader>
           <TableRow>
-            <TableHead className="text-center">Token ID</TableHead>
-            <TableHead>Comments</TableHead>
+            <TableHead>Title</TableHead>
+            <TableHead>Token ID</TableHead>
+            <TableHead>Message</TableHead>
             <TableHead className="text-center">Status</TableHead>
-            <TableHead className="text-center">Action</TableHead>
+            <TableHead className="text-center">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {notifications.map((notification, i) => (
-            <TableRow key={i}>
-              <TableCell className="text-center">
-                {notification.tokenId}
-              </TableCell>
+          {notifications.map((notification) => (
+            <TableRow key={notification.id}>
+              <TableCell>{notification.record_title}</TableCell>
+              <TableCell>{notification.token_id}</TableCell>
               <TableCell>{notification.message}</TableCell>
               <TableCell className="text-center">
                 <StatusBadge status={notification.status} />
@@ -198,9 +164,7 @@ export default function OrgNotificationsPage() {
                     <Button
                       variant="noShadow"
                       className="bg-red-300"
-                      onClick={() => {
-                        handleDelete(notification);
-                      }}
+                      onClick={() => {}}
                     >
                       {deletePending
                         ? "Deleting Notification..."
@@ -210,7 +174,7 @@ export default function OrgNotificationsPage() {
                 )}
                 {notification.status === "approved" && (
                   <Link
-                    href={`/org_view/${notification.tokenId}`}
+                    href={`/view/${notification.token_id}`}
                     prefetch={true}
                     className="flex h-full w-full flex-col items-center justify-between"
                   >
