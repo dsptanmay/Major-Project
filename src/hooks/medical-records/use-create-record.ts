@@ -3,7 +3,12 @@ import { InferRequestType, InferResponseType } from "hono";
 
 import { useToast } from "@/hooks/use-toast";
 
-import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { nextTokenIdToMint } from "@/thirdweb/11155111/functions";
 import { contract } from "@/app/client";
 
@@ -17,6 +22,7 @@ type RequestType = InferRequestType<
 
 export const useCreateRecord = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const mutation = useMutation<ResponseType, Error, RequestType>({
     mutationFn: async (newRecord) => {
@@ -31,6 +37,10 @@ export const useCreateRecord = () => {
       toast({
         title: "Success",
         description: `Created record with Token ID ${data.token_id} successfully (${data.id})`,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["records", { id: data.user_id }],
+        exact: true,
       });
     },
     onError: (err, variables) => {
