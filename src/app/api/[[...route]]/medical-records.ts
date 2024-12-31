@@ -7,7 +7,7 @@ import {
 
 import { insertRecordSchema, medicalRecords } from "@/db/schema";
 import { db } from "@/db/drizzle";
-import { record, z } from "zod";
+import { z } from "zod";
 
 const medicalRecordsRouter = new Hono()
   .use("*", clerkHonoMiddleware())
