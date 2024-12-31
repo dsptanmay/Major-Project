@@ -151,6 +151,39 @@ const notificationsRouter = new Hono()
 
       return c.json({ data: deletedNotification[0] }, 201);
     },
+  )
+  .patch(
+    "/:id",
+    zValidator("param", z.object({ id: z.string().optional() })),
+    zValidator(
+      "json",
+      z.object({ status: z.enum(["approved", "denied"]).optional() }),
+    ),
+    async (c) => {
+      const auth = getAuth(c);
+      if (!auth?.userId) return c.json({ error: "Unauthorized" }, 401);
+
+      const { id } = c.req.valid("param");
+      const { status } = c.req.valid("json");
+
+      if (!id || !status)
+        return c.json({ error: "Missing required fields" }, 400);
+
+      // only users can patch notifications. The 'and' check ensures that only the user who the notification was issued to, is patching the notification
+      const notif = await db.query.notifications.findFirst({
+        where: (record, { eq, and }) =>
+          and(eq(record.id, id), eq(record.user_id, auth.userId)),
+      });
+      if (!notif) return c.json({ error: "Notification not found" }, 404);
+
+      const updatedNotification = await db
+        .update(notifications)
+        .set({ status: status })
+        .where(eq(notifications.id, id))
+        .returning();
+
+      return c.json(updatedNotification[0], 201);
+    },
   );
 
 export default notificationsRouter;
