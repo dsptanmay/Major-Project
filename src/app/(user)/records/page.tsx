@@ -16,16 +16,14 @@ import {
 import Link from "next/link";
 
 import { useActiveAccount } from "thirdweb/react";
-import { useGetRecords } from "@/hooks/useRecords";
+import { useGetRecords } from "@/hooks/medical-records/use-get-records";
 import { format } from "date-fns";
+import { useUser } from "@clerk/nextjs";
 
 function RecordsPageContent() {
   const activeAccount = useActiveAccount();
-  const {
-    data: records,
-    status,
-    error,
-  } = useGetRecords(activeAccount?.address);
+  const { user } = useUser();
+  const { data: records, status, error } = useGetRecords(user?.id);
 
   if (!activeAccount) return <MissingWalletComponent />;
 
@@ -83,7 +81,7 @@ function RecordsPageContent() {
                 <h1>{format(record.uploaded_at, "dd MMM, yyyy")}</h1>
                 <h2>#{record.token_id}</h2>
               </div>
-              <Link href={`/user_view/${record.token_id}`} prefetch={true}>
+              <Link href={`/view/${record.token_id}`} prefetch={true}>
                 <Button className="w-full bg-[#fd9745]">View Document</Button>
               </Link>
             </CardContent>
