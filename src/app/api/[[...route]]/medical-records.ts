@@ -29,11 +29,32 @@ const medicalRecordsRouter = new Hono()
       if (!auth?.userId) return c.json({ error: "Unauthorized" }, 401);
       if (!token_id) return c.json({ error: "Token ID required" }, 401);
 
-      const record = await db.query.medicalRecords.findFirst({
+      const recordData = await db.query.medicalRecords.findFirst({
         where: (record, { eq }) => eq(record.token_id, token_id),
       });
-      if (!record) return c.json({ error: "Record not found" }, 404);
-      return c.json({ record });
+
+      if (!recordData) return c.json({ error: "Record not found" }, 404);
+
+      if (recordData.user_id === auth.userId)
+        return c.json({ record: recordData });
+
+      const accessData = await db.query.accessRequests.findFirst({
+        where: (request, { and, eq }) =>
+          and(
+            eq(request.organization_id, auth.userId),
+            eq(request.record_id, recordData.id),
+            eq(request.status, "approved"),
+          ),
+        columns: {
+          status: true,
+        },
+      });
+      if (!accessData)
+        return c.json(
+          { error: "No access request found for this record" },
+          404,
+        );
+      return c.json({ record: recordData });
     },
   )
   .post(
