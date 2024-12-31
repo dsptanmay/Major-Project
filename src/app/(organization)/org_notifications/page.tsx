@@ -19,20 +19,18 @@ import LoadingStateComponent from "@/components/loading-card";
 import MissingWalletComponent from "@/components/missing-wallet";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-import {
-  OrgNotification,
-  useDeleteNotification,
-} from "@/hooks/useNotifications";
 import { useToast } from "@/hooks/use-toast";
 import { useGetOrgNotifications } from "@/hooks/notifications/use-get-notifications";
+import { useDeleteNotification } from "@/hooks/notifications/use-delete-notification";
 
 import { useUser } from "@clerk/nextjs";
 
 type Notification = {
-  user_address: string;
-  token_id: string;
-  comments: string;
+  id: string;
+  message: string;
   status: "pending" | "approved" | "denied";
+  token_id: string;
+  record_title: string;
 };
 
 const StatusBadge: React.FC<{ status: Notification["status"] }> = ({
@@ -59,14 +57,9 @@ const StatusBadge: React.FC<{ status: Notification["status"] }> = ({
 export default function OrgNotificationsPage() {
   const activeAccount = useActiveAccount();
   const { user } = useUser();
-  const { toast } = useToast();
 
-  const {
-    mutate: deleteNotification,
-    status: deleteStatus,
-    error: deleteError,
-    isPending: deletePending,
-  } = useDeleteNotification();
+  const { mutate: deleteNotification, isPending: deletePending } =
+    useDeleteNotification(user?.id);
 
   const {
     data: notifications,
@@ -74,26 +67,8 @@ export default function OrgNotificationsPage() {
     error: fetchError,
   } = useGetOrgNotifications(user?.id);
 
-  const handleDelete = async (notification: OrgNotification) => {
-    try {
-      deleteNotification({
-        notification_id: notification.id,
-        org_address: activeAccount!.address,
-      });
-      if (deleteStatus === "success")
-        toast({
-          title: "Success",
-          description: "Deleted notification successfully!",
-        });
-    } catch (error) {
-      console.error(error, deleteError?.message);
-
-      toast({
-        title: "Error",
-        description: "Failed to delete notification",
-        variant: "destructive",
-      });
-    }
+  const handleDelete = async (notification: Notification) => {
+    deleteNotification({ query: { id: notification.id } });
   };
 
   if (!activeAccount) {
@@ -163,8 +138,11 @@ export default function OrgNotificationsPage() {
                   <div className="flex w-full justify-center">
                     <Button
                       variant="noShadow"
-                      className="bg-red-300"
-                      onClick={() => {}}
+                      className="bg-rose-400"
+                      onClick={() => {
+                        handleDelete(notification);
+                      }}
+                      disabled={deletePending}
                     >
                       {deletePending
                         ? "Deleting Notification..."
