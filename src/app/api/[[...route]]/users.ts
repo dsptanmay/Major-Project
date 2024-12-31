@@ -10,7 +10,7 @@ import { db } from "@/db/drizzle";
 import { clerkClient } from "@clerk/nextjs/server";
 import { z } from "zod";
 
-const userRouter = new Hono()
+const usersRouter = new Hono()
   .use("*", clerkHonoMiddleware())
   .get("/", async (c) => {
     const auth = getAuth(c);
@@ -72,4 +72,4 @@ const userRouter = new Hono()
     },
   );
 
-export default userRouter;
+export default usersRouter;
