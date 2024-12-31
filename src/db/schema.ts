@@ -43,6 +43,10 @@ export const medicalRecords = pgTable("medical_records", {
   uploaded_at: timestamp("uploaded_at").defaultNow().notNull(),
 });
 
+export const insertRecordSchema = createInsertSchema(medicalRecords, {
+  uploaded_at: z.coerce.date(),
+});
+
 export const accessRequests = pgTable("access_requests", {
   id: uuid("id").primaryKey().defaultRandom(),
   record_id: uuid("record_id")
