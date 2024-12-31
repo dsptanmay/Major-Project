@@ -131,22 +131,25 @@ const notificationsRouter = new Hono()
     },
   )
   .delete(
-    "/:id",
-    zValidator("param", z.object({ id: z.string().optional() })),
+    "/",
+    zValidator("query", z.object({ id: z.string().optional() })),
     async (c) => {
       const auth = getAuth(c);
-      const { id } = c.req.valid("param");
+      const { id } = c.req.valid("query");
       if (!auth?.userId) return c.json({ error: "Unauthorized" }, 401);
       if (!id) return c.json({ error: "Notification ID required" }, 400);
+
+      const notif = await db.query.notifications.findFirst({
+        where: (record, { eq }) => eq(record.id, id),
+      });
+      if (!notif) return c.json({ error: "Notification not found" }, 404);
 
       const deletedNotification = await db
         .delete(notifications)
         .where(eq(notifications.id, id))
         .returning();
 
-      if (deletedNotification.length === 0)
-        return c.json({ error: "Notification not found" }, 404);
-      return c.json(deletedNotification[0], 201);
+      return c.json({ data: deletedNotification[0] }, 201);
     },
   );
 
