@@ -43,25 +43,18 @@ export default function RoleSelectionPage() {
   const [role, setRole] =
     useState<(typeof userRoleEnum.enumValues)[number]>("user");
 
-  const handleCreateUser = () => {
+  const handleCreateUser = async () => {
     if (!user?.username) return;
     const newUser = {
       wallet_address: activeAccount!.address,
       role: role,
       username: user.username,
-      created_at: new Date(),
     };
     try {
-      createUser(newUser);
+      createUser({ ...newUser });
       if (status === "success") {
-        toast({
-          title: "Success",
-          description: `Successfully created user with role ${role}`,
-          duration: 1500,
-        });
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 1500);
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        router.push("/dashboard");
       }
     } catch (error) {
       console.error(createError);
