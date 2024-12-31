@@ -7,7 +7,7 @@ import {
 
 import { insertRecordSchema, medicalRecords } from "@/db/schema";
 import { db } from "@/db/drizzle";
-import { z } from "zod";
+import { record, z } from "zod";
 
 const medicalRecordsRouter = new Hono()
   .use("*", clerkHonoMiddleware())
@@ -36,7 +36,13 @@ const medicalRecordsRouter = new Hono()
       if (!recordData) return c.json({ error: "Record not found" }, 404);
 
       if (recordData.user_id === auth.userId)
-        return c.json({ record: recordData });
+        return c.json({
+          data: {
+            id: recordData.id,
+            encryption_key: recordData.encryption_key,
+            title: recordData.title,
+          },
+        });
 
       const accessData = await db.query.accessRequests.findFirst({
         where: (request, { and, eq }) =>
@@ -45,16 +51,19 @@ const medicalRecordsRouter = new Hono()
             eq(request.record_id, recordData.id),
             eq(request.status, "approved"),
           ),
-        columns: {
-          status: true,
-        },
       });
       if (!accessData)
         return c.json(
-          { error: "No access request found for this record" },
+          { error: "No approved access request found for this record" },
           404,
         );
-      return c.json({ record: recordData });
+      return c.json({
+        data: {
+          id: recordData.id,
+          encryption_key: recordData.encryption_key,
+          title: recordData.title,
+        },
+      });
     },
   )
   .post(
