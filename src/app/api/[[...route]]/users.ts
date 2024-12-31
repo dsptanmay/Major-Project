@@ -13,6 +13,7 @@ import { z } from "zod";
 const usersRouter = new Hono()
   .use("*", clerkHonoMiddleware())
   .get("/", async (c) => {
+    // TODO: remove later
     const auth = getAuth(c);
     if (!auth?.userId) return c.json({ error: "Unauthorized" }, 401);
     const currentUsers = await db.select().from(users);
