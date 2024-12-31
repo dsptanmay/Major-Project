@@ -19,6 +19,8 @@ export const notificationStatusEnum = pgEnum("notif_status", [
   "denied",
 ]);
 
+const historyEventEnum = pgEnum("history_event_type", ["write", "read"]);
+
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
   wallet_address: text("wallet_address").unique().notNull(),
@@ -74,6 +76,25 @@ export const notifications = pgTable("notifications", {
   message: text("message").notNull(),
   status: notificationStatusEnum("status").default("pending").notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications, {
+  created_at: z.coerce.date(),
+});
+
+export const history = pgTable("history", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  user_id: text("user_id")
+    .references(() => users.id)
+    .notNull(),
+  event_type: historyEventEnum("event_type").notNull(),
+  transaction_hash: text("tx_hash"),
+  comments: text("comments").notNull(),
+  performed_at: timestamp("performed_at").defaultNow().notNull(),
+});
+
+export const insertHistorySchema = createInsertSchema(history, {
+  performed_at: z.coerce.date(),
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
