@@ -8,25 +8,28 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import MissingWalletComponent from "@/components/missing-wallet";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { AlertCircle, CheckCircleIcon } from "lucide-react";
+import MissingWalletComponent from "@/components/missing-wallet";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-import { useCreateRecord, useGetTokenID } from "@/hooks/useRecords";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-import { useActiveAccount, useSendTransaction } from "thirdweb/react";
-import { mintNFT } from "@/thirdweb/11155111/functions";
-import { client, contract } from "@/app/client";
 import { upload } from "thirdweb/storage";
+import { client, contract } from "@/app/client";
+import { mintNFT } from "@/thirdweb/11155111/functions";
+import { useActiveAccount, useSendTransaction } from "thirdweb/react";
 
 import { useToast } from "@/hooks/use-toast";
-import { Toaster } from "@/components/ui/toaster";
+
+import {
+  useCreateRecord,
+  useGetTokenID,
+} from "@/hooks/medical-records/use-create-record";
 
 const formSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
@@ -52,6 +55,7 @@ function UserUploadPage() {
     status: transactionStatus,
     data: transactionResult,
   } = useSendTransaction();
+
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
   const activeAccount = useActiveAccount();
@@ -59,8 +63,9 @@ function UserUploadPage() {
   const {
     mutate: createRecord,
     status: createRecordStatus,
-    error: createError,
+    error: createRecordError,
   } = useCreateRecord();
+
   const tokenQuery = useGetTokenID();
 
   const handleEncryptionAndUpload = async (file: File) => {
@@ -116,7 +121,6 @@ function UserUploadPage() {
     if (encryption_key && ipfs_link) {
       try {
         const uploadData = {
-          wallet_address: activeAccount!.address,
           token_id: tokenId.toString(),
           encryption_key: encryption_key,
           title: formData.title,
@@ -128,13 +132,13 @@ function UserUploadPage() {
           to: activeAccount!.address,
         });
         sendTransaction(transaction)
-          .then((result) => {
+          .then(() => {
             toast({
               title: "Success",
               description: "Minted NFT successfully",
             });
-            createRecord(uploadData);
             setIsProcessing(false);
+            createRecord({ ...uploadData });
           })
           .catch((err) => {
             console.error(err);
@@ -244,7 +248,7 @@ function UserUploadPage() {
           <AlertCircle className="size-4" />
           <div className="flex flex-col space-y-4">
             <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{createError.message}</AlertDescription>
+            <AlertDescription>{createRecordError.message}</AlertDescription>
           </div>
         </Alert>
       )}
