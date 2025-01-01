@@ -157,30 +157,47 @@ const accessRequestsRouter = new Hono()
     },
   )
   .patch(
-    "/:id",
-    zValidator("param", z.object({ id: z.string().optional() })),
+    "/",
     zValidator(
       "json",
-      z.object({ status: z.enum(["approved", "denied"]).optional() }),
+      z.object({
+        status: z.enum(["approved", "denied"]).optional(),
+        token_id: z.string().optional(),
+        org_name: z.string().optional(),
+      }),
     ),
     async (c) => {
       const auth = getAuth(c);
-      const { id } = c.req.valid("param");
-      const { status } = c.req.valid("json");
+      const { status, token_id, org_name } = c.req.valid("json");
       if (!auth?.userId) return c.json({ error: "Unauthorized" }, 401);
-      if (!id || !status)
+      if (!token_id || !status || !org_name)
         return c.json({ error: "Missing required fields" }, 400);
 
-      const updatedNotification = await db
+      const recordData = await db.query.medicalRecords.findFirst({
+        where: (record, { eq }) => eq(record.token_id, token_id),
+      });
+      const orgData = await db.query.users.findFirst({
+        where: (user, { eq }) => eq(user.username, org_name),
+      });
+
+      if (!recordData || !orgData)
+        return c.json({ error: "Record or Organization not found" }, 404);
+
+      const updatedRequest = await db
         .update(accessRequests)
         .set({ status: status, processed_at: new Date() })
-        .where(eq(accessRequests.id, id))
+        .where(
+          and(
+            eq(accessRequests.organization_id, orgData.id),
+            eq(accessRequests.record_id, recordData.id),
+          ),
+        )
         .returning();
 
-      if (updatedNotification.length === 0)
-        return c.json({ error: "Record not found" }, 404);
+      if (updatedRequest.length === 0)
+        return c.json({ error: "Request not found" }, 404);
 
-      return c.json(updatedNotification[0], 201);
+      return c.json(updatedRequest[0], 201);
     },
   );
 

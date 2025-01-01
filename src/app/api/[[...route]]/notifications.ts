@@ -153,18 +153,19 @@ const notificationsRouter = new Hono()
     },
   )
   .patch(
-    "/:id",
-    zValidator("param", z.object({ id: z.string().optional() })),
+    "/",
     zValidator(
       "json",
-      z.object({ status: z.enum(["approved", "denied"]).optional() }),
+      z.object({
+        status: z.enum(["approved", "denied"]).optional(),
+        id: z.string().optional(),
+      }),
     ),
     async (c) => {
       const auth = getAuth(c);
       if (!auth?.userId) return c.json({ error: "Unauthorized" }, 401);
 
-      const { id } = c.req.valid("param");
-      const { status } = c.req.valid("json");
+      const { status, id } = c.req.valid("json");
 
       if (!id || !status)
         return c.json({ error: "Missing required fields" }, 400);
