@@ -1,8 +1,3 @@
-"use client";
-import React from "react";
-
-function DashboardPage() {
-  return <>Loading...</>;
+export default function DashboardPage() {
+  return null;
 }
-
-export default DashboardPage;
