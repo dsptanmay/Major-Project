@@ -10,16 +10,16 @@ type ResponseType = InferResponseType<
 
 type RequestType = InferRequestType<
   (typeof apiClient.api.access_requests)[":id"]["$delete"]
->["param"];
+>;
 
-export const useDeleteRequest = (id?: string) => {
+export const useDeleteRequestById = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const mutation = useMutation<ResponseType, Error, RequestType>({
-    mutationFn: async () => {
+    mutationFn: async ({ param }) => {
       const response = await apiClient.api.access_requests[":id"]["$delete"]({
-        param: { id },
+        param,
       });
       if (!response.ok) throw new Error("Failed to edit access request");
       const data = await response.json();
@@ -36,7 +36,7 @@ export const useDeleteRequest = (id?: string) => {
       console.error(err);
       toast({
         title: "Error",
-        description: `Failed to delete request with ID ${variables.id}`,
+        description: `Failed to delete request with ID ${variables.param.id}`,
         variant: "destructive",
       });
     },
