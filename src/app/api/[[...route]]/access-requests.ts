@@ -7,7 +7,13 @@ import { zValidator } from "@hono/zod-validator";
 
 import { db } from "@/db/drizzle";
 import { and, eq, inArray } from "drizzle-orm";
-import { accessRequests, medicalRecords, users } from "@/db/schema";
+import {
+  accessRequests,
+  medicalRecords,
+  notifications,
+  notificationStatusEnum,
+  users,
+} from "@/db/schema";
 
 import { z } from "zod";
 
@@ -124,13 +130,25 @@ const accessRequestsRouter = new Hono()
       if (!auth?.userId) return c.json({ error: "Unauthorized" }, 401);
       if (!id) return c.json({ error: "Request ID required" }, 400);
 
+      const requestData = await db.query.accessRequests.findFirst({
+        where: (record, { eq }) => eq(record.id, id),
+      });
+
+      if (!requestData) return c.json({ error: "Request not found" }, 404);
+
       const deletedRequest = await db
         .delete(accessRequests)
         .where(eq(accessRequests.id, id))
         .returning();
 
-      if (deletedRequest.length === 0)
-        return c.json({ error: "Request not found" }, 404);
+      await db
+        .delete(notifications)
+        .where(
+          and(
+            eq(notifications.record_id, requestData.record_id),
+            eq(notifications.org_id, requestData.organization_id),
+          ),
+        );
 
       return c.json(deletedRequest[0], 201);
     },
