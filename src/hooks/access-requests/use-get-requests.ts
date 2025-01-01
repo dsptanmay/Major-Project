@@ -14,7 +14,7 @@ type OrgResponseType = InferResponseType<
 
 export const useGetUserRequests = (id?: string) => {
   const query = useQuery<UserResponseType, Error>({
-    queryKey: ["access-request", { id }],
+    queryKey: ["access-requests", { id }],
     enabled: !!id,
     queryFn: async () => {
       const response = await apiClient.api.access_requests.user.$get();
@@ -28,7 +28,7 @@ export const useGetUserRequests = (id?: string) => {
 
 export const useGetOrgRequests = (id?: string) => {
   const query = useQuery<OrgResponseType, Error>({
-    queryKey: ["access-request", { id }],
+    queryKey: ["access-requests", { id }],
     enabled: !!id,
     queryFn: async () => {
       const response = await apiClient.api.access_requests.org.$get();

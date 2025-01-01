@@ -11,7 +11,6 @@ import {
   accessRequests,
   medicalRecords,
   notifications,
-  notificationStatusEnum,
   users,
 } from "@/db/schema";
 
@@ -141,14 +140,18 @@ const accessRequestsRouter = new Hono()
         .where(eq(accessRequests.id, id))
         .returning();
 
-      await db
+      const deletedNotif = await db
         .delete(notifications)
         .where(
           and(
             eq(notifications.record_id, requestData.record_id),
             eq(notifications.org_id, requestData.organization_id),
           ),
-        );
+        )
+        .returning();
+
+      if (deletedRequest.length === 0 || deletedNotif.length === 0)
+        return c.json({ error: "Failed to delete request" }, 500);
 
       return c.json(deletedRequest[0], 201);
     },
@@ -157,13 +160,13 @@ const accessRequestsRouter = new Hono()
     "/:id",
     zValidator("param", z.object({ id: z.string().optional() })),
     zValidator(
-      "query",
+      "json",
       z.object({ status: z.enum(["approved", "denied"]).optional() }),
     ),
     async (c) => {
       const auth = getAuth(c);
       const { id } = c.req.valid("param");
-      const { status } = c.req.valid("query");
+      const { status } = c.req.valid("json");
       if (!auth?.userId) return c.json({ error: "Unauthorized" }, 401);
       if (!id || !status)
         return c.json({ error: "Missing required fields" }, 400);

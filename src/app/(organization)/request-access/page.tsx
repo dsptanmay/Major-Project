@@ -19,10 +19,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { AlertCircleIcon, CheckIcon, Wallet } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-import { useToast } from "@/hooks/use-toast";
-import { useCreateRequest } from "@/hooks/useRequests";
-
 import { useActiveAccount } from "thirdweb/react";
+
+import { useToast } from "@/hooks/use-toast";
+import { useCreateRequest } from "@/hooks/access-requests/use-create-request";
 import { useCreateNotification } from "@/hooks/notifications/use-create-notification";
 
 export default function RequestAccessPage() {
@@ -55,19 +55,13 @@ export default function RequestAccessPage() {
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      createNotification({
-        token_id: values.token_id,
-        message: values.comments,
-      });
-      // createRequest({
+      // createNotification({
       //   token_id: values.token_id,
-      //   org_wallet_address: activeAccount!.address,
+      //   message: values.comments,
       // });
-      // if (createRequestStatus === "success" && createNotifStatus === "success")
-      //   toast({
-      //     title: "Success",
-      //     description: `Successfully requested access for Token ID ${values.token_id}`,
-      //   });
+      createRequest({
+        token_id: values.token_id,
+      });
     } catch (error) {
       console.error(error);
       toast({ title: "Error", description: "Failed to send request" });
