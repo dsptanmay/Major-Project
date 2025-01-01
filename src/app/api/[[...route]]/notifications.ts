@@ -131,11 +131,11 @@ const notificationsRouter = new Hono()
     },
   )
   .delete(
-    "/:id",
-    zValidator("param", z.object({ id: z.string().optional() })),
+    "/",
+    zValidator("query", z.object({ id: z.string().optional() })),
     async (c) => {
       const auth = getAuth(c);
-      const { id } = c.req.valid("param");
+      const { id } = c.req.valid("query");
       if (!auth?.userId) return c.json({ error: "Unauthorized" }, 401);
       if (!id) return c.json({ error: "Notification ID required" }, 400);
 
