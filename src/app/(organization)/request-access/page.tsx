@@ -39,7 +39,7 @@ export default function RequestAccessPage() {
     error: createRequestError,
   } = useCreateRequest();
   const {
-    mutate: createNotification,
+    mutateAsync: createNotification,
     status: createNotifStatus,
     error: createNotifError,
   } = useCreateNotification();
@@ -55,12 +55,13 @@ export default function RequestAccessPage() {
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      // createNotification({
-      //   token_id: values.token_id,
-      //   message: values.comments,
-      // });
-      createRequest({
+      createNotification({
         token_id: values.token_id,
+        message: values.comments,
+      }).then(() => {
+        createRequest({
+          token_id: values.token_id,
+        });
       });
     } catch (error) {
       console.error(error);
