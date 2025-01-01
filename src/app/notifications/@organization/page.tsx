@@ -21,6 +21,7 @@ import { useActiveAccount } from "thirdweb/react";
 import { useGetOrgNotifications } from "@/hooks/notifications/use-get-notifications";
 import { useDeleteNotification } from "@/hooks/notifications/use-delete-notification";
 import { useToast } from "@/hooks/use-toast";
+import { useDeleteRequest } from "@/hooks/access-requests/use-delete-org-request";
 
 type Notification = {
   id: string;
@@ -53,17 +54,25 @@ const StatusBadge: React.FC<{ status: Notification["status"] }> = ({
 
 function DataTable({ data }: { data: Notification[] }) {
   const { toast } = useToast();
+  const { user } = useUser();
   const { mutate: deleteNotification, status: notifStatus } =
     useDeleteNotification();
+  const { mutate: deleteRequest, status: reqStatus } = useDeleteRequest();
+
+  const isPending = notifStatus === "pending" || reqStatus === "pending";
 
   const handleDelete = (notification: Notification) => {
     try {
       deleteNotification({ param: { id: notification.id } });
+      deleteRequest({
+        query: { org_id: user?.id, token_id: notification.token_id },
+      });
     } catch (error) {
       console.error(error);
       toast({ title: "Error", description: "Failed to delete notification" });
     }
   };
+
   return (
     <Table>
       <TableCaption>A list of notifications you recently created</TableCaption>
@@ -91,11 +100,13 @@ function DataTable({ data }: { data: Notification[] }) {
                 <Button
                   className="bg-rose-400"
                   variant="noShadow"
+                  disabled={isPending}
                   onClick={() => {
                     handleDelete(notification);
                   }}
+                  key={notification.id}
                 >
-                  Delete Notification
+                  {isPending ? "Deleting..." : "Delete Notification"}
                 </Button>
               )}
             </TableCell>
