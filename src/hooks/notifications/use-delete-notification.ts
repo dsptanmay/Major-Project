@@ -5,10 +5,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/hono";
 import { InferRequestType, InferResponseType } from "hono";
 
-type RequestType = InferRequestType<typeof apiClient.api.notifications.$delete>;
+type RequestType = InferRequestType<
+  (typeof apiClient.api.notifications)[":id"]["$delete"]
+>;
 
 type ResponseType = InferResponseType<
-  typeof apiClient.api.notifications.$delete,
+  (typeof apiClient.api.notifications)[":id"]["$delete"],
   201
 >;
 
@@ -16,9 +18,9 @@ export const useDeleteNotification = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const mutation = useMutation<ResponseType, Error, RequestType>({
-    mutationFn: async ({ query }) => {
-      const response = await apiClient.api.notifications.$delete({
-        query: query,
+    mutationFn: async ({ param }) => {
+      const response = await apiClient.api.notifications[":id"]["$delete"]({
+        param,
       });
       if (!response.ok) throw new Error("Failed to delete notification");
       const data = await response.json();
@@ -38,7 +40,7 @@ export const useDeleteNotification = () => {
       console.error(err);
       toast({
         title: "Error",
-        description: `Failed to delete notification with ID ${variables.query.id}`,
+        description: `Failed to delete notification with ID ${variables.param.id}`,
         variant: "destructive",
       });
     },
