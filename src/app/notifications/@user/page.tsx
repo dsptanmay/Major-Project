@@ -1,13 +1,7 @@
 "use client";
 
 import React from "react";
-
 import { useUser } from "@clerk/nextjs";
-
-import { useActiveAccount } from "thirdweb/react";
-
-import MissingWalletComponent from "@/components/missing-wallet";
-import LoadingStateComponent from "@/components/loading-card";
 
 import {
   Table,
@@ -18,9 +12,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import LoadingStateComponent from "@/components/loading-card";
+import MissingWalletComponent from "@/components/missing-wallet";
+
+import { useToast } from "@/hooks/use-toast";
+import { useEditRequest } from "@/hooks/access-requests/use-edit-request";
 import { useEditNotification } from "@/hooks/notifications/use-edit-notification";
 import { useGetUserNotifications } from "@/hooks/notifications/use-get-notifications";
-import { Button } from "@/components/ui/button";
+
+import { contract } from "@/app/client";
+import { grantAccess } from "@/thirdweb/11155111/functions";
+import { useActiveAccount, useSendTransaction } from "thirdweb/react";
 
 function DataTable({
   data,
@@ -33,6 +36,63 @@ function DataTable({
     org_wallet_address: string;
   }[];
 }) {
+  const { toast } = useToast();
+
+  const { mutateAsync: sendTransaction, status: transactionStatus } =
+    useSendTransaction();
+
+  const { mutate: updateNotification, status: notifStatus } =
+    useEditNotification();
+  const { mutate: updateRequest, status: requestStatus } = useEditRequest();
+
+  const isPending =
+    transactionStatus === "pending" ||
+    requestStatus === "pending" ||
+    notifStatus === "pending";
+
+  const handleApprove = (notification: (typeof data)[0]) => {
+    try {
+      const transaction = grantAccess({
+        contract: contract,
+        tokenId: BigInt(notification.token_id),
+        user: notification.org_wallet_address,
+      });
+      sendTransaction(transaction).then((result) => {
+        updateNotification({ id: notification.id, status: "approved" });
+        updateRequest({
+          status: "approved",
+          token_id: notification.token_id,
+          org_name: notification.org_username,
+        });
+        toast({ title: "Success", description: `${result.transactionHash}` });
+      });
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: "Failed to approve request",
+        variant: "destructive",
+      });
+    }
+  };
+  const handleDeny = (notification: (typeof data)[0]) => {
+    try {
+      updateNotification({ id: notification.id, status: "denied" });
+      updateRequest({
+        status: "denied",
+        token_id: notification.token_id,
+        org_name: notification.org_username,
+      });
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: "Failed to deny request",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Table>
       <TableCaption>A list of your recent notifications</TableCaption>
@@ -61,10 +121,17 @@ function DataTable({
               <Button
                 variant="noShadow"
                 className="flex flex-grow bg-green-300"
+                disabled={isPending}
+                onClick={() => handleApprove(notification)}
               >
-                Grant
+                {transactionStatus === "pending" ? "Granting..." : "Grant"}
               </Button>
-              <Button variant="noShadow" className="flex flex-grow bg-rose-400">
+              <Button
+                variant="noShadow"
+                className="flex flex-grow bg-rose-400"
+                disabled={isPending}
+                onClick={() => handleDeny(notification)}
+              >
                 Deny
               </Button>
             </TableCell>
