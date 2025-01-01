@@ -58,7 +58,7 @@ function DataTable({ data }: { data: Notification[] }) {
 
   const handleDelete = (notification: Notification) => {
     try {
-      deleteNotification({ query: { id: notification.id } });
+      deleteNotification({ param: { id: notification.id } });
     } catch (error) {
       console.error(error);
       toast({ title: "Error", description: "Failed to delete notification" });
