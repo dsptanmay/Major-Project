@@ -16,7 +16,7 @@ async function OrganizationDashboard() {
       title: "Notifications",
       description: "See the list of pending requests for access to documents",
       icon: <MessageSquareDot className="size-10" />,
-      url: "/org_notifications",
+      url: "/notifications",
     },
     {
       title: "View Granted Records",

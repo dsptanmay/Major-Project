@@ -1,13 +1,12 @@
-import NavCards from "@/components/nav-cards";
 import { currentUser } from "@clerk/nextjs/server";
 import {
-  Eye,
   FileStack,
   FolderCog,
   History,
   MessageSquareDot,
   UploadIcon,
 } from "lucide-react";
+import NavCards from "@/components/nav-cards";
 import React from "react";
 
 async function UserDashboard() {
@@ -29,7 +28,7 @@ async function UserDashboard() {
       title: "Notifications",
       description:
         "See the list of pending requests for access to your documents",
-      url: "/user_notifications",
+      url: "/notifications",
       icon: <MessageSquareDot className="size-10" />,
     },
     {
@@ -56,6 +55,7 @@ async function UserDashboard() {
           Here you can access the functions available to you as a user
         </h2>
       </div>
+      {/* <TestCards cards={cards} /> */}
       <NavCards cards={cards} />
     </div>
   );
