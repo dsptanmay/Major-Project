@@ -1,20 +1,27 @@
-import React from "react";
+import PageFooter from "@/components/page-footer";
+import PageHeader from "@/components/page-header";
+import { USER_ROLE } from "@/types/roles";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import UserDashboardPage from "@/components/user-dashboard";
-import OrganizationDashboardPage from "@/components/org-dashboard";
-import { ORG_ROLE, USER_ROLE } from "@/types/roles";
 
 export default async function DashboardLayout({
   children,
+  organization,
+  user,
 }: {
   children: React.ReactNode;
+  organization: React.ReactNode;
+  user: React.ReactNode;
 }) {
-  const user = await currentUser();
-  if (!user) redirect("/sign-in");
-  const role = user.publicMetadata.role;
+  const clerkUser = await currentUser();
+  if (!clerkUser) redirect("/sign-in");
+  const role = clerkUser.publicMetadata.role;
   if (!role) redirect("/role-select");
-
-  if (role === USER_ROLE) return <UserDashboardPage />;
-  if (role === ORG_ROLE) return <OrganizationDashboardPage />;
+  return (
+    <div className="flex min-h-screen w-full flex-col items-center justify-between border-2 border-border bg-white bg-[radial-gradient(#80808080_1px,transparent_1px)] shadow-light [background-size:16px_16px]">
+      <PageHeader title="Dashboard" />
+      {role === USER_ROLE ? user : organization}
+      <PageFooter />
+    </div>
+  );
 }

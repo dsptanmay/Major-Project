@@ -1,3 +1,5 @@
-export default function DashboardPage() {
+function DashboardPage() {
   return null;
 }
+
+export default DashboardPage;
