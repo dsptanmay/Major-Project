@@ -22,6 +22,7 @@ import { useGetOrgNotifications } from "@/hooks/notifications/use-get-notificati
 import { useDeleteNotification } from "@/hooks/notifications/use-delete-notification";
 import { useToast } from "@/hooks/use-toast";
 import { useDeleteRequest } from "@/hooks/access-requests/use-delete-org-request";
+import { useRouter } from "next/navigation";
 
 type Notification = {
   id: string;
@@ -58,6 +59,7 @@ function DataTable({ data }: { data: Notification[] }) {
   const { mutate: deleteNotification, status: notifStatus } =
     useDeleteNotification();
   const { mutate: deleteRequest, status: reqStatus } = useDeleteRequest();
+  const router = useRouter();
 
   const isPending = notifStatus === "pending" || reqStatus === "pending";
 
@@ -75,11 +77,11 @@ function DataTable({ data }: { data: Notification[] }) {
 
   return (
     <Table>
-      <TableCaption>A list of notifications you recently created</TableCaption>
+      <TableCaption>A list of requests you recently created</TableCaption>
       <TableHeader>
         <TableRow>
           <TableHead>Title</TableHead>
-          <TableHead>Token ID</TableHead>
+          <TableHead className="text-center">Token ID</TableHead>
           <TableHead>Message</TableHead>
           <TableHead className="text-center">Status</TableHead>
           <TableHead className="text-center">Action</TableHead>
@@ -89,13 +91,25 @@ function DataTable({ data }: { data: Notification[] }) {
         {data.map((notification) => (
           <TableRow key={notification.id}>
             <TableCell>{notification.record_title}</TableCell>
-            <TableCell>{notification.token_id}</TableCell>
+            <TableCell className="flex justify-center">
+              {notification.token_id}
+            </TableCell>
             <TableCell>{notification.message}</TableCell>
             <TableCell className="flex justify-center">
               <StatusBadge status={notification.status} key={notification.id} />
             </TableCell>
             <TableCell className="text-center">
-              {notification.status === "approved" && <>View</>}
+              {notification.status === "approved" && (
+                <Button
+                  className="bg-[#fa9e53]"
+                  variant="noShadow"
+                  onClick={() => {
+                    router.push(`/view/${notification.token_id}`);
+                  }}
+                >
+                  View Document
+                </Button>
+              )}
               {notification.status === "denied" && (
                 <Button
                   className="bg-rose-400"
@@ -136,6 +150,7 @@ function OrgNotifications() {
           {activeAccount.address.slice(0, 6)}...
           {activeAccount.address.slice(38)}
         </span>
+        :
       </h1>
       <DataTable data={data} />
     </div>
