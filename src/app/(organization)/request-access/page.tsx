@@ -24,6 +24,7 @@ import { useActiveAccount } from "thirdweb/react";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateRequest } from "@/hooks/access-requests/use-create-request";
 import { useCreateNotification } from "@/hooks/notifications/use-create-notification";
+import MissingWalletComponent from "@/components/missing-wallet";
 
 export default function RequestAccessPage() {
   const { toast } = useToast();
@@ -69,15 +70,7 @@ export default function RequestAccessPage() {
     }
   };
   if (!activeAccount) {
-    return (
-      <div>
-        <Alert className="bg-red-300">
-          <Wallet className="h-4 w-4" />
-          <AlertTitle>Missing Wallet</AlertTitle>
-          <AlertDescription>Please connect your wallet first!</AlertDescription>
-        </Alert>
-      </div>
-    );
+    return <MissingWalletComponent />;
   }
   return (
     <div

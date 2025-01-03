@@ -13,6 +13,8 @@ import { useActiveAccount } from "thirdweb/react";
 import { useGetIpfs } from "@/hooks/use-ipfs";
 import { useGetRecord } from "@/hooks/medical-records/use-get-record";
 import { useHasAccess } from "@/hooks/access-requests/use-check-access";
+import AlertCard from "@/components/alert-card";
+import { AlertCircle } from "lucide-react";
 
 function TestUserView({ params }: { params: { token_id: string } }) {
   const [pdfUrl, setPdfUrl] = useState<string | undefined>(undefined);
@@ -115,10 +117,12 @@ function TestUserView({ params }: { params: { token_id: string } }) {
     return <LoadingStateComponent content="Checking Access..." />;
   if (accessStatus === "error" || recordStatus === "error") {
     return (
-      <Alert className="bg-rose-500">
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>Failed to check access</AlertDescription>
-      </Alert>
+      <AlertCard
+        variant="error"
+        title="Error"
+        description="Failed to check access"
+        icon={<AlertCircle />}
+      />
     );
   }
 

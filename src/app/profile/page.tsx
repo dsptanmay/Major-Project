@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUser } from "@clerk/nextjs";
 
 import { useGetUser } from "@/hooks/users/use-get-user";
+import AlertCard from "@/components/alert-card";
 
 function ProfilePage() {
   const { user } = useUser();
@@ -44,13 +45,12 @@ function ProfilePage() {
 
   if (status === "error")
     return (
-      <div>
-        <Alert className="bg-red-400">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>User not found!</AlertDescription>
-        </Alert>
-      </div>
+      <AlertCard
+        variant="error"
+        title="Error"
+        description="User not found"
+        icon={<AlertCircle />}
+      />
     );
 
   return (

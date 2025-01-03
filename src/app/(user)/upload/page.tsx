@@ -30,6 +30,7 @@ import {
   useCreateRecord,
   useGetTokenID,
 } from "@/hooks/medical-records/use-create-record";
+import AlertCard from "@/components/alert-card";
 
 const formSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
@@ -244,13 +245,12 @@ function UserUploadPage() {
         </form>
       </Form>
       {createRecordStatus === "error" && (
-        <Alert className="flex flex-row space-x-4 bg-rose-500">
-          <AlertCircle className="size-4" />
-          <div className="flex flex-col space-y-4">
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{createRecordError.message}</AlertDescription>
-          </div>
-        </Alert>
+        <AlertCard
+          icon={<AlertCircle />}
+          title="Error"
+          description={createRecordError.message}
+          variant="error"
+        />
       )}
       {createRecordStatus === "success" && transactionStatus === "success" && (
         <Alert className="bg-green-300">
