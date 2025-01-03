@@ -3,7 +3,7 @@ import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/providers";
 import { Toaster } from "@/components/ui/toaster";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const dmSans = DM_Sans({ subsets: ["latin"] });
 
@@ -22,7 +22,7 @@ export default function RootLayout({
         <body className={dmSans.className}>
           <main>{children}</main>
           <Toaster />
-          <ReactQueryDevtools />
+          <SpeedInsights />
         </body>
       </html>
     </Providers>
