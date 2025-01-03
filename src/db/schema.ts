@@ -19,7 +19,7 @@ export const notificationStatusEnum = pgEnum("notif_status", [
   "denied",
 ]);
 
-const historyEventEnum = pgEnum("history_event_type", ["write", "read"]);
+export const historyEventEnum = pgEnum("history_event_type", ["write", "read"]);
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -87,7 +87,7 @@ export const history = pgTable("history", {
   user_id: text("user_id")
     .references(() => users.id)
     .notNull(),
-  event_type: historyEventEnum("event_type").notNull(),
+  event_type: historyEventEnum("event").notNull(),
   transaction_hash: text("tx_hash"),
   comments: text("comments").notNull(),
   performed_at: timestamp("performed_at").defaultNow().notNull(),
