@@ -1,60 +1,138 @@
-import { pgEnum, pgTable, primaryKey, varchar } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
 
-export const status = pgEnum("status", ["approved", "pending", "denied"]);
+export const userRoleEnum = pgEnum("user_role", [
+  "user",
+  "medical_organization",
+]);
+export const accessStatusEnum = pgEnum("access_status", [
+  "pending",
+  "approved",
+  "denied",
+]);
 
-export const notificationsTable = pgTable(
-  "notifications",
-  {
-    org_address: varchar({ length: 255 }).notNull(),
-    org_name: varchar({ length: 255 }).notNull(),
-    user_address: varchar({ length: 255 }).notNull(),
-    nft_token_id: varchar({ length: 255 }).notNull(),
-    comments: varchar({ length: 255 }).notNull(),
-    status: status().notNull(),
-  },
-  (table) => {
-    return {
-      pk: primaryKey({
-        columns: [table.org_address, table.user_address, table.nft_token_id],
-      }),
-    };
-  },
+export const notificationStatusEnum = pgEnum("notif_status", [
+  "pending",
+  "approved",
+  "denied",
+]);
+
+const historyEventEnum = pgEnum("history_event_type", ["write", "read"]);
+
+export const users = pgTable("users", {
+  id: text("id").primaryKey(),
+  wallet_address: text("wallet_address").unique().notNull(),
+  role: userRoleEnum("role").notNull(),
+  username: text("username").notNull().unique(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertUserSchema = createInsertSchema(users, {
+  created_at: z.coerce.date(),
+});
+
+export const medicalRecords = pgTable("medical_records", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  user_id: text("user_id")
+    .references(() => users.id)
+    .notNull(),
+  token_id: text("token_id").unique().notNull(), // NFT token ID
+  encryption_key: text("encryption_key").notNull(), // AES key encrypted with user's public key
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  uploaded_at: timestamp("uploaded_at").defaultNow().notNull(),
+});
+
+export const insertRecordSchema = createInsertSchema(medicalRecords, {
+  uploaded_at: z.coerce.date(),
+});
+
+export const accessRequests = pgTable("access_requests", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  record_id: uuid("record_id")
+    .references(() => medicalRecords.id)
+    .notNull(),
+  organization_id: text("organization_id")
+    .references(() => users.id)
+    .notNull(),
+  status: accessStatusEnum("status").default("pending").notNull(),
+  requested_at: timestamp("requested_at").defaultNow().notNull(),
+  processed_at: timestamp("processed_at"),
+});
+
+export const notifications = pgTable("notifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  record_id: uuid("record_id")
+    .references(() => medicalRecords.id)
+    .notNull(),
+  org_id: text("organization_id")
+    .references(() => users.id)
+    .notNull(),
+  user_id: text("user_id")
+    .references(() => users.id)
+    .notNull(),
+  message: text("message").notNull(),
+  status: notificationStatusEnum("status").default("pending").notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications, {
+  created_at: z.coerce.date(),
+});
+
+export const history = pgTable("history", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  user_id: text("user_id")
+    .references(() => users.id)
+    .notNull(),
+  event_type: historyEventEnum("event_type").notNull(),
+  transaction_hash: text("tx_hash"),
+  comments: text("comments").notNull(),
+  performed_at: timestamp("performed_at").defaultNow().notNull(),
+});
+
+export const insertHistorySchema = createInsertSchema(history, {
+  performed_at: z.coerce.date(),
+});
+
+export const usersRelations = relations(users, ({ many }) => ({
+  medical_records: many(medicalRecords),
+  access_requests: many(accessRequests),
+  notifications: many(notifications),
+}));
+
+export const medicalRecordsRelations = relations(
+  medicalRecords,
+  ({ one, many }) => ({
+    user: one(users, {
+      fields: [medicalRecords.user_id],
+      references: [users.id],
+    }),
+    access_requests: many(accessRequests),
+  }),
 );
 
-export const organizationWalletTable = pgTable("organization_wallets", {
-  organization_name: varchar({ length: 255 }).notNull().primaryKey(),
-  wallet_address: varchar({ length: 255 }).notNull().unique(),
-});
+export const accessRequestsRelations = relations(accessRequests, ({ one }) => ({
+  record: one(medicalRecords, {
+    fields: [accessRequests.record_id],
+    references: [medicalRecords.id],
+  }),
+  organization: one(users, {
+    fields: [accessRequests.organization_id],
+    references: [users.id],
+  }),
+}));
 
-export const organizationGrantedTokens = pgTable(
-  "granted_tokens_org",
-  {
-    org_name: varchar({ length: 255 })
-      .notNull()
-      .references(() => organizationWalletTable.organization_name),
-    token_id: varchar({ length: 255 })
-      .notNull()
-      .references(() => userNFTsTable.token_id),
-    title: varchar({ length: 255 }).notNull(),
-    description: varchar({ length: 255 }).notNull(),
-  },
-  (table) => {
-    return {
-      pk: primaryKey({
-        columns: [table.org_name, table.token_id],
-      }),
-    };
-  },
-);
+export type InsertUser = typeof users.$inferInsert;
+export type SelectUser = typeof users.$inferSelect;
 
-export const userNFTsTable = pgTable("user_files", {
-  token_id: varchar({ length: 255 }).primaryKey(),
-  user_address: varchar({ length: 255 }).notNull(),
-  title: varchar({ length: 255 }).notNull(),
-  description: varchar({ length: 255 }).notNull(),
-});
+export type InsertRecord = typeof medicalRecords.$inferInsert;
+export type SelectRecord = typeof medicalRecords.$inferSelect;
 
-export const tokenEncryptions = pgTable("token_encryptions", {
-  token_id: varchar("token_id", { length: 255 }).primaryKey().notNull(),
-  encryption_key: varchar("encryption_key", { length: 255 }).notNull(),
-});
+export type InsertRequest = typeof accessRequests.$inferInsert;
+export type SelectRequest = typeof accessRequests.$inferSelect;
+
+export type InsertNotification = typeof notifications.$inferInsert;
+export type SelectNotification = typeof notifications.$inferSelect;

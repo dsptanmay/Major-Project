@@ -1,6 +1,9 @@
 "use client";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+
 import { Button } from "@/components/ui/button";
+import MissingWalletComponent from "@/components/missing-wallet";
 import {
   Card,
   CardContent,
@@ -16,14 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Toaster } from "@/components/ui/toaster";
-import { userRoleEnum } from "@/db/schema_2";
-import { useToast } from "@/hooks/use-toast";
-import { useCreateUser } from "@/hooks/useUsers";
+
 import { useUser } from "@clerk/nextjs";
-import { Wallet } from "lucide-react";
-import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import { userRoleEnum } from "@/db/schema";
+
+import { useToast } from "@/hooks/use-toast";
+import { useCreateUser } from "@/hooks/users/use-create-user";
+
 import { useActiveAccount } from "thirdweb/react";
 
 export default function RoleSelectionPage() {
@@ -41,20 +43,17 @@ export default function RoleSelectionPage() {
   const [role, setRole] =
     useState<(typeof userRoleEnum.enumValues)[number]>("user");
 
-  const handleCreateUser = () => {
+  const handleCreateUser = async () => {
+    if (!user?.username) return;
     const newUser = {
       wallet_address: activeAccount!.address,
-      role: role as (typeof userRoleEnum.enumValues)[number],
-      username: user!.username!,
-      clerk_user_id: user!.id,
+      role: role,
+      username: user.username,
     };
     try {
       createUser(newUser);
       if (status === "success") {
-        toast({
-          title: "Success",
-          description: `Successfully created user with role ${role}`,
-        });
+        await new Promise((resolve) => setTimeout(resolve, 1500));
         router.push("/dashboard");
       }
     } catch (error) {
@@ -63,20 +62,11 @@ export default function RoleSelectionPage() {
     }
   };
 
-  if (!activeAccount)
-    return (
-      <div>
-        <Alert className="bg-red-300">
-          <Wallet className="h-4 w-4" />
-          <AlertTitle>Missing Wallet</AlertTitle>
-          <AlertDescription>Please connect your wallet first!</AlertDescription>
-        </Alert>
-      </div>
-    );
+  if (!activeAccount) return <MissingWalletComponent />;
 
   return (
     <div>
-      <Card className="w-[350px]">
+      <Card className="w-[350px] bg-[#fff4e0]">
         <CardHeader>
           <CardTitle>Select Role</CardTitle>
           <CardDescription>
@@ -111,7 +101,7 @@ export default function RoleSelectionPage() {
         <CardFooter className="flex w-full">
           {status !== "success" && (
             <Button
-              className="w-full"
+              className="w-full bg-[#fd9745]"
               onClick={handleCreateUser}
               variant="default"
               disabled={isPending}
@@ -121,7 +111,6 @@ export default function RoleSelectionPage() {
           )}
         </CardFooter>
       </Card>
-      <Toaster />
     </div>
   );
 }

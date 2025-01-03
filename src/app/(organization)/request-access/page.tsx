@@ -13,18 +13,17 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Toaster } from "@/components/ui/toaster";
 import { AlertCircleIcon, CheckIcon, Wallet } from "lucide-react";
-
-import { useToast } from "@/hooks/use-toast";
-import { useCreateRequest } from "@/hooks/useRequests";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 import { useActiveAccount } from "thirdweb/react";
-import { useCreateNotification } from "@/hooks/useNotifications";
+
+import { useToast } from "@/hooks/use-toast";
+import { useCreateRequest } from "@/hooks/access-requests/use-create-request";
+import { useCreateNotification } from "@/hooks/notifications/use-create-notification";
 
 export default function RequestAccessPage() {
   const { toast } = useToast();
@@ -40,7 +39,7 @@ export default function RequestAccessPage() {
     error: createRequestError,
   } = useCreateRequest();
   const {
-    mutate: createNotification,
+    mutateAsync: createNotification,
     status: createNotifStatus,
     error: createNotifError,
   } = useCreateNotification();
@@ -59,17 +58,11 @@ export default function RequestAccessPage() {
       createNotification({
         token_id: values.token_id,
         message: values.comments,
-        org_wallet_address: activeAccount!.address,
-      });
-      createRequest({
-        token_id: values.token_id,
-        org_wallet_address: activeAccount!.address,
-      });
-      if (createRequestStatus === "success" && createNotifStatus === "success")
-        toast({
-          title: "Success",
-          description: `Successfully requested access for Token ID ${values.token_id}`,
+      }).then(() => {
+        createRequest({
+          token_id: values.token_id,
         });
+      });
     } catch (error) {
       console.error(error);
       toast({ title: "Error", description: "Failed to send request" });
@@ -147,7 +140,6 @@ export default function RequestAccessPage() {
               </Button>
             )}
         </form>
-        <Toaster />
       </Form>
       {createNotifStatus === "success" && createRequestStatus === "success" && (
         <Alert className="bg-green-300">
