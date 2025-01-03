@@ -1,6 +1,6 @@
 "use client";
-import React, { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import React, { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import LoadingStateComponent from "@/components/loading-card";
@@ -10,9 +10,9 @@ import { client } from "@/app/client";
 import { resolveScheme } from "thirdweb/storage";
 import { useActiveAccount } from "thirdweb/react";
 
-import { useGetIpfs } from "@/hooks/useIpfs";
-import { useCheckAccess } from "@/hooks/useRequests";
+import { useGetIpfs } from "@/hooks/use-ipfs";
 import { useGetRecord } from "@/hooks/medical-records/use-get-record";
+import { useHasAccess } from "@/hooks/access-requests/use-check-access";
 
 function TestUserView({ params }: { params: { token_id: string } }) {
   const [pdfUrl, setPdfUrl] = useState<string | undefined>(undefined);
@@ -23,14 +23,13 @@ function TestUserView({ params }: { params: { token_id: string } }) {
   const activeAccount = useActiveAccount();
 
   const ipfsQuery = useGetIpfs(activeAccount?.address, params.token_id);
-  const {
-    data: recordData,
-    status: recordStatus,
-    error: recordError,
-  } = useGetRecord(params.token_id);
-  const { data: hasAccess, status: accessStatus } = useCheckAccess(
-    activeAccount?.address,
+  const { data: hasAccess, status: accessStatus } = useHasAccess(
     params.token_id,
+    activeAccount?.address,
+  );
+  const { data: recordData, status: recordStatus } = useGetRecord(
+    params.token_id,
+    hasAccess,
   );
 
   const pdfViewerRef = useRef<HTMLIFrameElement>(null);

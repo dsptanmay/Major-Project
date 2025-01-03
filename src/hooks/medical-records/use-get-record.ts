@@ -1,10 +1,10 @@
 import { apiClient } from "@/lib/hono";
 import { useQuery } from "@tanstack/react-query";
 
-export const useGetRecord = (tokenId?: string) => {
+export const useGetRecord = (tokenId?: string, hasAccess?: boolean) => {
   const query = useQuery({
     queryKey: ["record", { tokenId }],
-    enabled: !!tokenId,
+    enabled: !!tokenId && !!hasAccess,
     queryFn: async () => {
       const response = await apiClient.api.medical_records[":token_id"].$get({
         param: { token_id: tokenId },
