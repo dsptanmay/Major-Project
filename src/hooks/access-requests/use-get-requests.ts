@@ -26,10 +26,10 @@ export const useGetUserRequests = (id?: string) => {
   return query;
 };
 
-export const useGetOrgRequests = (id?: string) => {
+export const useGetOrgRequests = (id?: string, wallet_address?: string) => {
   const query = useQuery<OrgResponseType, Error>({
     queryKey: ["access-requests", { id }],
-    enabled: !!id,
+    enabled: !!id && !!wallet_address,
     queryFn: async () => {
       const response = await apiClient.api.access_requests.org.$get();
       if (!response.ok) throw new Error("Failed to fetch requests");

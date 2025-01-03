@@ -1,7 +1,14 @@
 "use client";
-import LoadingStateComponent from "@/components/loading-card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+import React from "react";
+import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
+
+import AlertCard from "@/components/alert-card";
 import { Button } from "@/components/ui/button";
+import { AlertCircle, InfoIcon } from "lucide-react";
+import LoadingStateComponent from "@/components/loading-card";
+import MissingWalletComponent from "@/components/missing-wallet";
 import {
   Card,
   CardContent,
@@ -9,55 +16,43 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useGetRequestsOrg } from "@/hooks/useRequests";
-import { AlertCircle, Wallet } from "lucide-react";
-import Link from "next/link";
-import React from "react";
+
+import { format } from "date-fns";
+
 import { useActiveAccount } from "thirdweb/react";
+import { useGetOrgRequests } from "@/hooks/access-requests/use-get-requests";
 
 function GrantedRecordsPage() {
   const activeAccount = useActiveAccount();
+  const { user } = useUser();
 
   const {
     data: orgRequests,
     status,
     error,
-  } = useGetRequestsOrg(activeAccount?.address);
+  } = useGetOrgRequests(user?.id, activeAccount?.address);
 
-  if (!activeAccount)
-    return (
-      <div>
-        <Alert>
-          <Wallet className="h-4 w-4" />
-          <AlertTitle>Missing Wallet</AlertTitle>
-          <AlertDescription>Please connect your wallet first!</AlertDescription>
-        </Alert>
-      </div>
-    );
+  if (!activeAccount) return <MissingWalletComponent />;
 
   if (status === "pending")
     return <LoadingStateComponent content="Loading records..." />;
   if (status === "error")
     return (
-      <div>
-        <Alert className="bg-rose-400">
-          <AlertCircle className="size-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error.message}</AlertDescription>
-        </Alert>
-      </div>
+      <AlertCard
+        variant="error"
+        title="Error"
+        description={error.message}
+        icon={<AlertCircle />}
+      />
     );
   if (orgRequests.length === 0)
     return (
-      <div>
-        <Alert className="bg-yellow-200">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Missing Records</AlertTitle>
-          <AlertDescription>
-            Organization has no granted documents
-          </AlertDescription>
-        </Alert>
-      </div>
+      <AlertCard
+        icon={<InfoIcon />}
+        title="Error"
+        description="No approved requests found"
+        variant="status"
+      />
     );
   return (
     <div className="flex w-full max-w-6xl flex-col space-y-5 rounded-base border-[3px] border-border bg-white p-5 shadow-light">
@@ -70,15 +65,23 @@ function GrantedRecordsPage() {
       </h2>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {orgRequests.map((record) => (
-          <Card key={record.requestId} className="bg-[#fff4e0]">
+          <Card key={record.id} className="bg-[#fff4e0]">
             <CardHeader>
-              <CardTitle className="text-gray-800">
-                {record.recordTitle}
-              </CardTitle>
-              <CardDescription>{record.recordDescription}</CardDescription>
+              <CardTitle className="text-gray-800">{record.title}</CardTitle>
+              <CardDescription>{record.description}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <Link href={`/org_view/${record.recordTokenId}`} prefetch={true}>
+            <CardContent className="flex flex-col space-y-5">
+              <div className="flex justify-between text-sm font-base">
+                <h1>
+                  {format(new Date(record.processed_at!), "dd MMM, yyyy")}
+                </h1>
+                <p>&#35;{record.token_id}</p>
+              </div>
+              <Link
+                href={`/view/${record.token_id}`}
+                prefetch={true}
+                className="w-full"
+              >
                 <Button className="w-full bg-[#fd9745]">View Document</Button>
               </Link>
             </CardContent>

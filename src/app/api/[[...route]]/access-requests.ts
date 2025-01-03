@@ -37,7 +37,10 @@ const accessRequestsRouter = new Hono()
         processed_at: accessRequests.processed_at,
       })
       .from(accessRequests)
-      .innerJoin(medicalRecords, eq(accessRequests.record_id, medicalRecords))
+      .innerJoin(
+        medicalRecords,
+        eq(accessRequests.record_id, medicalRecords.id),
+      )
       .innerJoin(users, eq(medicalRecords.user_id, users.id))
       .where(
         and(
