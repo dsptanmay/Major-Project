@@ -7,7 +7,7 @@ import notificationsRouter from "./notifications";
 import medicalRecordsRouter from "./medical-records";
 import accessRequestsRouter from "./access-requests";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 const app = new Hono().basePath("/api").use("*", logger());
 
