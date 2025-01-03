@@ -1,7 +1,7 @@
 "use client";
-import LoadingStateComponent from "@/components/loading-card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import React from "react";
+import { useUser } from "@clerk/nextjs";
+
 import {
   Table,
   TableBody,
@@ -12,31 +12,30 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AlertCircle } from "lucide-react";
-import { Toaster } from "@/components/ui/toaster";
-import React from "react";
+import { Button } from "@/components/ui/button";
+import AlertCard from "@/components/alert-card";
+import LoadingStateComponent from "@/components/loading-card";
+import MissingWalletComponent from "@/components/missing-wallet";
 
 import { format } from "date-fns";
 
 import { useToast } from "@/hooks/use-toast";
-import { useDeleteRequest, useGetRequestsUser } from "@/hooks/useRequests";
+import { useGetUserRequests } from "@/hooks/access-requests/use-get-requests";
+import { useDeleteRequestById } from "@/hooks/access-requests/use-delete-id-request";
 
 import { contract } from "@/app/client";
-import { useActiveAccount, useSendTransaction } from "thirdweb/react";
 import { revokeAccess } from "@/thirdweb/11155111/functions";
-import MissingWalletComponent from "@/components/missing-wallet";
+import { useActiveAccount, useSendTransaction } from "thirdweb/react";
 
 function AccessControlPage() {
   const activeAccount = useActiveAccount();
+  const { user } = useUser();
   const { toast } = useToast();
   const { mutateAsync: sendTransaction, status: transactionStatus } =
     useSendTransaction();
-  const {
-    data: requests,
-    status,
-    error,
-  } = useGetRequestsUser(activeAccount?.address);
+  const { data: requests, status, error } = useGetUserRequests(user?.id);
   const { mutate: deleteRequest, isPending: reqDeletePending } =
-    useDeleteRequest();
+    useDeleteRequestById();
 
   if (!activeAccount) return <MissingWalletComponent />;
 
@@ -44,40 +43,38 @@ function AccessControlPage() {
     return <LoadingStateComponent content="Loading requests..." />;
   if (status === "error")
     return (
-      <div>
-        <Alert className="bg-rose-400">
-          <AlertCircle className="size-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error.message}</AlertDescription>
-        </Alert>
-      </div>
+      <AlertCard
+        title="Error"
+        description={error.message}
+        icon={<AlertCircle />}
+        variant="status"
+      />
     );
 
   if (requests.length === 0)
     return (
-      <div>
-        <Alert className="bg-yellow-200">
-          <AlertCircle className="size-4" />
-          <AlertTitle>Missing Records</AlertTitle>
-          <AlertDescription>You have granted no documents!</AlertDescription>
-        </Alert>
-      </div>
+      <AlertCard
+        title="Erorr"
+        description="No requests approved yet"
+        icon={<AlertCircle />}
+        variant="status"
+      />
     );
 
   const handleRevokeAccess = async (request: (typeof requests)[0]) => {
     try {
       const transaction = revokeAccess({
         contract,
-        tokenId: BigInt(request.recordTokenId),
-        user: request.organizationWallet,
+        tokenId: BigInt(request.token_id),
+        user: request.org_wallet_address,
       });
       sendTransaction(transaction)
         .then((result) => {
           toast({
             title: "Success",
-            description: `${result.transactionHash} for ${request.recordTokenId}`,
+            description: `${result.transactionHash} for ${request.token_id}`,
           });
-          deleteRequest({ request_id: request.requestId });
+          deleteRequest({ param: { id: request.id } });
         })
         .catch((err) => {
           console.error(err);
@@ -112,20 +109,16 @@ function AccessControlPage() {
         </TableHeader>
         <TableBody>
           {requests.map((request) => (
-            <TableRow key={request.requestId}>
-              <TableCell>{request.organizationName}</TableCell>
-              <TableCell>{request.organizationWallet}</TableCell>
+            <TableRow key={request.id}>
+              <TableCell>{request.org_username}</TableCell>
+              <TableCell>{request.org_wallet_address}</TableCell>
+              <TableCell className="text-center">{request.token_id}</TableCell>
+              <TableCell className="text-center">{request.title}</TableCell>
               <TableCell className="text-center">
-                {request.recordTokenId}
-              </TableCell>
-              <TableCell className="text-center">
-                {request.recordTitle}
-              </TableCell>
-              <TableCell className="text-center">
-                {request.processedAt === null
+                {request.processed_at === null
                   ? "Unprocessed"
                   : format(
-                      new Date(request.processedAt),
+                      new Date(request.processed_at),
                       "dd MMM, yyyy (HH:m)",
                     )}
               </TableCell>

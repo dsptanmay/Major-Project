@@ -156,6 +156,48 @@ const accessRequestsRouter = new Hono()
       return c.json(deletedRequest[0], 201);
     },
   )
+  .delete(
+    "/",
+    zValidator(
+      "query",
+      z.object({
+        org_id: z.string().optional(),
+        token_id: z.string().optional(),
+      }),
+    ),
+    async (c) => {
+      const auth = getAuth(c);
+      if (!auth?.userId) return c.json({ error: "Unauthorized" }, 401);
+
+      const { org_id, token_id } = c.req.valid("query");
+      if (!org_id || !token_id)
+        return c.json({ error: "Missing rqeuired fields" }, 400);
+
+      const recordData = await db.query.medicalRecords.findFirst({
+        where: (record, { eq }) => eq(record.token_id, token_id),
+        columns: {
+          id: true,
+        },
+      });
+      if (!recordData) return c.json({ error: "Record not found" }, 404);
+      if (auth.userId !== org_id)
+        return c.json({ error: "Invalid User ID" }, 400);
+
+      const deletedRequest = await db
+        .delete(accessRequests)
+        .where(
+          and(
+            eq(accessRequests.organization_id, org_id),
+            eq(accessRequests.record_id, recordData.id),
+          ),
+        )
+        .returning();
+
+      if (deletedRequest.length === 0)
+        return c.json({ error: "Access request not found" }, 404);
+      return c.json(deletedRequest[0], 201);
+    },
+  )
   .patch(
     "/",
     zValidator(

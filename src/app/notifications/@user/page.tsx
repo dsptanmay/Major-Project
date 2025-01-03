@@ -13,6 +13,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import AlertCard from "@/components/alert-card";
+import { AlertCircle, InfoIcon } from "lucide-react";
 import LoadingStateComponent from "@/components/loading-card";
 import MissingWalletComponent from "@/components/missing-wallet";
 
@@ -149,12 +151,31 @@ function UserNotifications() {
     data: notifications,
     status: fetchStatus,
     error,
-  } = useGetUserNotifications(user?.id);
+  } = useGetUserNotifications(user?.id, activeAccount?.address);
 
   if (!activeAccount) return <MissingWalletComponent />;
   if (fetchStatus === "pending")
     return <LoadingStateComponent content="Loading notifications..." />;
-  if (fetchStatus === "error") return <h1>Error</h1>; // TODO add a proper Error component
+  if (fetchStatus === "error")
+    return (
+      <AlertCard
+        title="Error"
+        description={error.message}
+        icon={<AlertCircle />}
+        variant="error"
+      />
+    );
+
+  if (notifications.length === 0)
+    return (
+      <AlertCard
+        title="Missing Notifications"
+        description="No pending notifications found for user"
+        icon={<InfoIcon />}
+        variant="status"
+      />
+    );
+
   return (
     <div className="flex w-full max-w-6xl flex-col space-y-5 border-2 border-border bg-white p-5 shadow-light">
       <h1>
