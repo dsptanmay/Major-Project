@@ -54,7 +54,7 @@ function AccessControlPage() {
   if (requests.length === 0)
     return (
       <AlertCard
-        title="Erorr"
+        title="Error"
         description="No requests approved yet"
         icon={<AlertCircle />}
         variant="status"
