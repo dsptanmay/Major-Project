@@ -6,6 +6,7 @@ import usersRouter from "./users";
 import notificationsRouter from "./notifications";
 import medicalRecordsRouter from "./medical-records";
 import accessRequestsRouter from "./access-requests";
+import historyRouter from "./history";
 
 // export const runtime = "edge";
 
@@ -13,6 +14,7 @@ const app = new Hono().basePath("/api").use("*", logger());
 
 const routes = app
   .route("/users", usersRouter)
+  .route("/history", historyRouter)
   .route("/notifications", notificationsRouter)
   .route("/medical_records", medicalRecordsRouter)
   .route("/access_requests", accessRequestsRouter);

@@ -1,7 +1,8 @@
 import { apiClient } from "@/lib/hono";
 import { useMutation } from "@tanstack/react-query";
-import { InferRequestType, InferResponseType } from "hono";
 import { useToast } from "@/hooks/use-toast";
+import { InferRequestType, InferResponseType } from "hono";
+import { redirect } from "next/navigation";
 
 type ResponseType = InferResponseType<typeof apiClient.api.users.$post, 201>;
 type RequestType = InferRequestType<typeof apiClient.api.users.$post>["json"];
@@ -18,6 +19,11 @@ export const useCreateUser = () => {
       toast({
         title: "Success",
         description: `Created user successfully (${data.id})`,
+      });
+      new Promise((r) => {
+        setTimeout(r, 1000);
+      }).then(() => {
+        redirect("/dashboard");
       });
     },
     onError: (err) => {

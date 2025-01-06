@@ -26,3 +26,5 @@ const historyRouter = new Hono()
       return c.json({});
     },
   );
+
+export default historyRouter;
