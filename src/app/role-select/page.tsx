@@ -52,10 +52,6 @@ export default function RoleSelectionPage() {
     };
     try {
       createUser(newUser);
-      if (status === "success") {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        router.push("/dashboard");
-      }
     } catch (error) {
       console.error(createError);
       toast({ title: "Error", description: "Failed to create user" });
