@@ -95,7 +95,18 @@ export const history = pgTable("history", {
 
 export const insertHistorySchema = createInsertSchema(history, {
   performed_at: z.coerce.date(),
-});
+})
+  .omit({ id: true, performed_at: true })
+  .superRefine((input, ctx) => {
+    if (input.event_type === "write" && !input.transaction_hash) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.invalid_type,
+        expected: "string",
+        received: "null",
+        message: "Transaction Hash must be set when event type is 'write'",
+      });
+    }
+  });
 
 export const usersRelations = relations(users, ({ many }) => ({
   medical_records: many(medicalRecords),
