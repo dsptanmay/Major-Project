@@ -109,8 +109,8 @@ function TestUserView({ params }: { params: { token_id: string } }) {
         setDocumentName(result.original_name);
         setPdfUrl(result.pdf_url);
         createEvent({
-          event_type: "read",
           comments: `${user?.username} (${user?.publicMetadata.role}) viewed document with Token ID ${params.token_id}`,
+          token_id: params.token_id,
         });
       })
       .catch((err) => {
