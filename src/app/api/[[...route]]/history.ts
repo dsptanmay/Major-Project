@@ -79,7 +79,9 @@ const historyRouter = new Hono()
         performed_at: history.performed_at,
       })
       .from(history)
-      .where(eq(history.user_id, auth.userId));
+      .where(
+        and(eq(history.user_id, auth.userId), eq(history.event_type, "write")),
+      );
 
     return c.json(data, 200);
   })
@@ -94,7 +96,9 @@ const historyRouter = new Hono()
         performed_at: history.performed_at,
       })
       .from(history)
-      .where(eq(history.user_id, auth.userId));
+      .where(
+        and(eq(history.user_id, auth.userId), eq(history.event_type, "read")),
+      );
 
     return c.json(data, 200);
   })
