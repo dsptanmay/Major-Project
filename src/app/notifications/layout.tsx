@@ -2,6 +2,7 @@ import PageFooter from "@/components/page-footer";
 import PageHeader from "@/components/page-header";
 import { USER_ROLE } from "@/types/roles";
 import { currentUser } from "@clerk/nextjs/server";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { redirect } from "next/navigation";
 import React from "react";
 import { ThirdwebProvider } from "thirdweb/react";
@@ -25,6 +26,7 @@ export default async function NotificationsLayout({
         <PageHeader title="Notifications" />
         {role === USER_ROLE ? user : organization}
         <PageFooter />
+        <ReactQueryDevtools />
       </ThirdwebProvider>
     </div>
   );

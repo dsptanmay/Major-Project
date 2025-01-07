@@ -26,9 +26,11 @@ import { useGetUserNotifications } from "@/hooks/notifications/use-get-notificat
 import { contract } from "@/app/client";
 import { grantAccess } from "@/thirdweb/11155111/functions";
 import { useActiveAccount, useSendTransaction } from "thirdweb/react";
+import { useCreateWriteEvent } from "@/hooks/history/use-create-write-event";
 
 function DataTable({
   data,
+  userId,
 }: {
   data: {
     id: string;
@@ -37,6 +39,7 @@ function DataTable({
     org_username: string;
     org_wallet_address: string;
   }[];
+  userId: string;
 }) {
   const { toast } = useToast();
 
@@ -47,10 +50,13 @@ function DataTable({
     useEditNotification();
   const { mutate: updateRequest, status: requestStatus } = useEditRequest();
 
+  const { mutate: createEvent, status: eventStatus } = useCreateWriteEvent();
+
   const isPending =
     transactionStatus === "pending" ||
     requestStatus === "pending" ||
-    notifStatus === "pending";
+    notifStatus === "pending" ||
+    eventStatus === "pending";
 
   const handleApprove = (notification: (typeof data)[0]) => {
     try {
@@ -65,6 +71,10 @@ function DataTable({
           status: "approved",
           token_id: notification.token_id,
           org_name: notification.org_username,
+        });
+        createEvent({
+          comments: `Granted access to ${notification.org_username} for document with Token ID ${notification.token_id}`,
+          transaction_hash: result.transactionHash,
         });
         toast({ title: "Success", description: `${result.transactionHash}` });
       });
@@ -186,7 +196,7 @@ function UserNotifications() {
         </span>
         :
       </h1>
-      <DataTable data={notifications} />
+      <DataTable data={notifications} userId={user?.id!} />
     </div>
   );
 }

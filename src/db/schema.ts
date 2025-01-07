@@ -1,5 +1,12 @@
-import { pgTable, uuid, text, timestamp, pgEnum } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import {
+  pgTable,
+  uuid,
+  text,
+  timestamp,
+  pgEnum,
+  check,
+} from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -29,10 +36,6 @@ export const users = pgTable("users", {
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertUserSchema = createInsertSchema(users, {
-  created_at: z.coerce.date(),
-});
-
 export const medicalRecords = pgTable("medical_records", {
   id: uuid("id").primaryKey().defaultRandom(),
   user_id: text("user_id")
@@ -43,10 +46,6 @@ export const medicalRecords = pgTable("medical_records", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   uploaded_at: timestamp("uploaded_at").defaultNow().notNull(),
-});
-
-export const insertRecordSchema = createInsertSchema(medicalRecords, {
-  uploaded_at: z.coerce.date(),
 });
 
 export const accessRequests = pgTable("access_requests", {
@@ -78,39 +77,46 @@ export const notifications = pgTable("notifications", {
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertNotificationSchema = createInsertSchema(notifications, {
-  created_at: z.coerce.date(),
-});
-
-export const history = pgTable("history", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  user_id: text("user_id")
-    .references(() => users.id)
-    .notNull(),
-  event_type: historyEventEnum("event").notNull(),
-  transaction_hash: text("tx_hash"),
-  comments: text("comments").notNull(),
-  performed_at: timestamp("performed_at").defaultNow().notNull(),
-});
-
-export const insertHistorySchema = createInsertSchema(history, {
-  performed_at: z.coerce.date(),
-});
+export const history = pgTable(
+  "history",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    user_id: text("user_id")
+      .references(() => users.id)
+      .notNull(),
+    event_type: historyEventEnum("event").notNull(),
+    transaction_hash: text("tx_hash"),
+    comments: text("comments").notNull(),
+    performed_at: timestamp("performed_at").defaultNow().notNull(),
+  },
+  (table) => [
+    {
+      checkConstraint: check(
+        "tx_hash_check",
+        sql`NOT (${table.event_type} = 'write' AND ${table.transaction_hash} IS NULL)`,
+      ),
+    },
+  ],
+);
 
 export const usersRelations = relations(users, ({ many }) => ({
-  medical_records: many(medicalRecords),
-  access_requests: many(accessRequests),
+  medicalRecords: many(medicalRecords),
+  accessRequestsAsOrg: many(accessRequests, {
+    relationName: "organizationRequests",
+  }),
   notifications: many(notifications),
+  historyEvents: many(history),
 }));
 
 export const medicalRecordsRelations = relations(
   medicalRecords,
   ({ one, many }) => ({
-    user: one(users, {
+    owner: one(users, {
       fields: [medicalRecords.user_id],
       references: [users.id],
     }),
-    access_requests: many(accessRequests),
+    accessRequests: many(accessRequests),
+    notifications: many(notifications),
   }),
 );
 
@@ -122,17 +128,38 @@ export const accessRequestsRelations = relations(accessRequests, ({ one }) => ({
   organization: one(users, {
     fields: [accessRequests.organization_id],
     references: [users.id],
+    relationName: "organizationRequests",
   }),
 }));
 
-export type InsertUser = typeof users.$inferInsert;
-export type SelectUser = typeof users.$inferSelect;
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  record: one(medicalRecords, {
+    fields: [notifications.record_id],
+    references: [medicalRecords.id],
+  }),
+  organization: one(users, {
+    fields: [notifications.org_id],
+    references: [users.id],
+  }),
+  user: one(users, {
+    fields: [notifications.user_id],
+    references: [users.id],
+  }),
+}));
 
-export type InsertRecord = typeof medicalRecords.$inferInsert;
-export type SelectRecord = typeof medicalRecords.$inferSelect;
+export const historyRelations = relations(history, ({ one }) => ({
+  user: one(users, {
+    fields: [history.user_id],
+    references: [users.id],
+  }),
+}));
 
-export type InsertRequest = typeof accessRequests.$inferInsert;
-export type SelectRequest = typeof accessRequests.$inferSelect;
-
-export type InsertNotification = typeof notifications.$inferInsert;
-export type SelectNotification = typeof notifications.$inferSelect;
+export const insertUserSchema = createInsertSchema(users, {
+  created_at: z.coerce.date(),
+});
+export const insertRecordSchema = createInsertSchema(medicalRecords, {
+  uploaded_at: z.coerce.date(),
+});
+export const insertNotificationSchema = createInsertSchema(notifications, {
+  created_at: z.coerce.date(),
+});
