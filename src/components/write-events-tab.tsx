@@ -23,6 +23,7 @@ import { useUser } from "@clerk/nextjs";
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetWriteEvents } from "@/hooks/history/use-get-write-events";
+import DownloadAllWriteEventsButton from "./download-write-events-btn";
 
 function WriteEventsTable() {
   const { user } = useUser();
@@ -71,7 +72,8 @@ function WriteEventsCard() {
       <CardContent>
         <WriteEventsTable />
       </CardContent>
-      <CardFooter className="flex w-full justify-end">
+      <CardFooter className="flex w-full justify-between">
+        <DownloadAllWriteEventsButton userId={user?.id} />
         <Button
           variant="noShadow"
           className="bg-[#FEF2E8] font-base"

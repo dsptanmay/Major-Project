@@ -24,6 +24,7 @@ import { useUser } from "@clerk/nextjs";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useGetReadEvents } from "@/hooks/history/use-get-read-events";
+import DownloadAllReadEventsButton from "./download-read-events-btn";
 
 function ReadEventsTable({ userId }: { userId: string }) {
   const { data, status } = useGetReadEvents(userId);
@@ -76,7 +77,8 @@ function ReadEventsCard() {
       <CardContent>
         <ReadEventsTable userId={user?.id!} />
       </CardContent>
-      <CardFooter className="flex w-full justify-end">
+      <CardFooter className="flex w-full justify-between">
+        <DownloadAllReadEventsButton userId={user?.id} />
         <Button
           variant="noShadow"
           className="bg-[#FEF2E8] font-base"
