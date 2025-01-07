@@ -4,11 +4,11 @@ import { InferRequestType, InferResponseType } from "hono";
 import { useToast } from "@/hooks/use-toast";
 
 type ResponseType = InferResponseType<
-  typeof apiClient.api.history.write.$post,
+  typeof apiClient.api.history.read.$post,
   201
 >;
 type RequestType = InferRequestType<
-  typeof apiClient.api.history.write.$post
+  typeof apiClient.api.history.read.$post
 >["json"];
 
 export const useCreateReadEvent = () => {
@@ -25,7 +25,7 @@ export const useCreateReadEvent = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({
-        queryKey: ["get-write-events", { id: data.user_id }],
+        queryKey: ["get-read-events", { id: data.user_id }],
       });
     },
     onError: (err) => {
