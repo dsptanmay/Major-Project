@@ -26,22 +26,32 @@ import { useDeleteRequestById } from "@/hooks/access-requests/use-delete-id-requ
 import { contract } from "@/app/client";
 import { revokeAccess } from "@/thirdweb/11155111/functions";
 import { useActiveAccount, useSendTransaction } from "thirdweb/react";
+import { useCreateWriteEvent } from "@/hooks/history/use-create-write-event";
 
 function AccessControlPage() {
   const activeAccount = useActiveAccount();
   const { user } = useUser();
   const { toast } = useToast();
+
   const { mutateAsync: sendTransaction, status: transactionStatus } =
     useSendTransaction();
-  const { data: requests, status, error } = useGetUserRequests(user?.id);
-  const { mutate: deleteRequest, isPending: reqDeletePending } =
+
+  const {
+    data: requests,
+    status: fetchStatus,
+    error,
+  } = useGetUserRequests(user?.id);
+
+  const { mutate: deleteRequest, status: reqDelStatus } =
     useDeleteRequestById();
+
+  const { mutate: createEvent, status: eventStatus } = useCreateWriteEvent();
 
   if (!activeAccount) return <MissingWalletComponent />;
 
-  if (status === "pending")
+  if (fetchStatus === "pending")
     return <LoadingStateComponent content="Loading requests..." />;
-  if (status === "error")
+  if (fetchStatus === "error")
     return (
       <AlertCard
         title="Error"
@@ -75,6 +85,11 @@ function AccessControlPage() {
             description: `${result.transactionHash} for ${request.token_id}`,
           });
           deleteRequest({ param: { id: request.id } });
+          createEvent({
+            comments: `Revoked access from ${request.org_username} for Document with Token ID ${request.token_id}`,
+            event_type: "write",
+            transaction_hash: result.transactionHash,
+          });
         })
         .catch((err) => {
           console.error(err);
@@ -85,6 +100,8 @@ function AccessControlPage() {
       toast({ title: "Error", description: "An error occurred!" });
     }
   };
+
+  const isPending = reqDelStatus === "pending" || eventStatus === "pending";
 
   return (
     <div className="flex w-full max-w-6xl flex-col space-y-5 border-2 border-border bg-white p-5 shadow-light">
@@ -127,11 +144,9 @@ function AccessControlPage() {
                   className="w-full bg-rose-400 text-sm"
                   variant="noShadow"
                   onClick={() => handleRevokeAccess(request)}
-                  disabled={reqDeletePending || transactionStatus === "pending"}
+                  disabled={isPending}
                 >
-                  {reqDeletePending || transactionStatus === "pending"
-                    ? "Revoking Access..."
-                    : "Revoke Access"}
+                  {isPending ? "Revoking Access..." : "Revoke Access"}
                 </Button>
               </TableCell>
             </TableRow>
