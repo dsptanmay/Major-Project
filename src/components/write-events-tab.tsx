@@ -29,7 +29,9 @@ function WriteEventsTable() {
   const { data, status } = useGetWriteEvents(user?.id);
 
   if (status === "pending")
-    return <Skeleton className="w-full border-2 border-border"></Skeleton>;
+    return (
+      <Skeleton className="w-full border-2 border-border px-5 py-10"></Skeleton>
+    );
   if (status === "error") return <div>Error</div>; // TODO : replace with proper error component
   return (
     <Table>
