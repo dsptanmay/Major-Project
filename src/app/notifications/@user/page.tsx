@@ -21,7 +21,10 @@ import MissingWalletComponent from "@/components/missing-wallet";
 import { useToast } from "@/hooks/use-toast";
 import { useEditRequest } from "@/hooks/access-requests/use-edit-request";
 import { useEditNotification } from "@/hooks/notifications/use-edit-notification";
-import { useGetUserNotifications } from "@/hooks/notifications/use-get-notifications";
+import {
+  useGetUserNotifications,
+  type UserNotifications as UserNotificationsPage,
+} from "@/hooks/notifications/use-get-notifications";
 
 import { contract } from "@/app/client";
 import { grantAccess } from "@/thirdweb/11155111/functions";
@@ -32,13 +35,7 @@ function DataTable({
   data,
   userId,
 }: {
-  data: {
-    id: string;
-    message: string;
-    token_id: string;
-    org_username: string;
-    org_wallet_address: string;
-  }[];
+  data: UserNotificationsPage;
   userId: string;
 }) {
   const { toast } = useToast();
@@ -62,18 +59,18 @@ function DataTable({
     try {
       const transaction = grantAccess({
         contract: contract,
-        tokenId: BigInt(notification.token_id),
-        user: notification.org_wallet_address,
+        tokenId: BigInt(notification.record.token_id),
+        user: notification.organization.wallet_address,
       });
       sendTransaction(transaction).then((result) => {
         updateNotification({ id: notification.id, status: "approved" });
         updateRequest({
           status: "approved",
-          token_id: notification.token_id,
-          org_name: notification.org_username,
+          token_id: notification.record.token_id,
+          org_name: notification.organization.username,
         });
         createEvent({
-          comments: `Granted access to ${notification.org_username} for document with Token ID ${notification.token_id}`,
+          comments: `Granted access to ${notification.organization.username} for document with Token ID ${notification.record.token_id}`,
           transaction_hash: result.transactionHash,
         });
         toast({ title: "Success", description: `${result.transactionHash}` });
@@ -92,8 +89,8 @@ function DataTable({
       updateNotification({ id: notification.id, status: "denied" });
       updateRequest({
         status: "denied",
-        token_id: notification.token_id,
-        org_name: notification.org_username,
+        token_id: notification.record.token_id,
+        org_name: notification.organization.username,
       });
     } catch (err) {
       console.error(err);
@@ -120,13 +117,13 @@ function DataTable({
       <TableBody>
         {data.map((notification) => (
           <TableRow key={notification.id}>
-            <TableCell>{notification.org_username}</TableCell>
+            <TableCell>{notification.organization.username}</TableCell>
             <TableCell>
-              {notification.org_wallet_address.slice(0, 6)}...
-              {notification.org_wallet_address.slice(38)}
+              {notification.organization.wallet_address.slice(0, 6)}...
+              {notification.organization.wallet_address.slice(38)}
             </TableCell>
             <TableCell className="text-center">
-              {notification.token_id}
+              {notification.record.token_id}
             </TableCell>
             <TableCell>{notification.message}</TableCell>
             <TableCell className="flex w-full flex-grow space-x-3">
@@ -154,7 +151,7 @@ function DataTable({
   );
 }
 
-function UserNotifications() {
+function UserNotificationsPage() {
   const { user } = useUser();
   const activeAccount = useActiveAccount();
   const {
@@ -201,4 +198,4 @@ function UserNotifications() {
   );
 }
 
-export default UserNotifications;
+export default UserNotificationsPage;

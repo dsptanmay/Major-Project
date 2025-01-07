@@ -29,25 +29,29 @@ const notificationsRouter = new Hono()
     if (!userData) return c.json({ error: "User not found" }, 404);
     if (userData.role !== "user") return c.json({ error: "Invalid role" }, 400);
 
-    const result = await db
-      .select({
-        id: notifications.id,
-        message: notifications.message,
-        token_id: medicalRecords.token_id,
-        org_username: users.username,
-        org_wallet_address: users.wallet_address,
-      })
-      .from(notifications)
-      .innerJoin(medicalRecords, eq(notifications.record_id, medicalRecords.id))
-      .innerJoin(users, eq(notifications.org_id, users.id))
-      .where(
-        and(
-          eq(notifications.user_id, auth.userId),
-          eq(notifications.status, "pending"),
-        ),
-      );
+    const data = await db.query.notifications.findMany({
+      where: (notif, { eq, and }) =>
+        and(eq(notif.user_id, auth.userId), eq(notif.status, "pending")),
+      columns: {
+        id: true,
+        message: true,
+      },
+      with: {
+        record: {
+          columns: {
+            token_id: true,
+          },
+        },
+        organization: {
+          columns: {
+            username: true,
+            wallet_address: true,
+          },
+        },
+      },
+    });
 
-    return c.json({ data: result });
+    return c.json({ data });
   })
   .get("/org", async (c) => {
     const auth = getAuth(c);
@@ -64,20 +68,24 @@ const notificationsRouter = new Hono()
     if (userData.role !== "medical_organization")
       return c.json({ error: "Invalid role" }, 400);
 
-    const result = await db
-      .select({
-        id: notifications.id,
-        message: notifications.message,
-        status: notifications.status,
-        token_id: medicalRecords.token_id,
-        record_title: medicalRecords.title,
-      })
-      .from(notifications)
-      .innerJoin(medicalRecords, eq(notifications.record_id, medicalRecords.id))
-      .innerJoin(users, eq(notifications.org_id, users.id))
-      .where(eq(notifications.org_id, auth.userId));
+    const data = await db.query.notifications.findMany({
+      where: (notification, { eq }) => eq(notification.org_id, auth.userId),
+      columns: {
+        id: true,
+        message: true,
+        status: true,
+      },
+      with: {
+        record: {
+          columns: {
+            token_id: true,
+            title: true,
+          },
+        },
+      },
+    });
 
-    return c.json({ data: result });
+    return c.json({ data });
   })
   .post(
     "/",
