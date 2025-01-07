@@ -27,29 +27,29 @@ const accessRequestsRouter = new Hono()
     const auth = getAuth(c);
     if (!auth?.userId) return c.json({ error: "Unauthorized" }, 401);
 
-    const requests = await db
-      .select({
-        id: accessRequests.id,
-        title: medicalRecords.title,
-        description: medicalRecords.description,
-        token_id: medicalRecords.token_id,
-        requested_at: accessRequests.requested_at,
-        processed_at: accessRequests.processed_at,
-      })
-      .from(accessRequests)
-      .innerJoin(
-        medicalRecords,
-        eq(accessRequests.record_id, medicalRecords.id),
-      )
-      .innerJoin(users, eq(medicalRecords.user_id, users.id))
-      .where(
+    const data = await db.query.accessRequests.findMany({
+      where: (request, { eq, and }) =>
         and(
-          eq(accessRequests.organization_id, auth.userId),
-          eq(accessRequests.status, "approved"),
+          eq(request.organization_id, auth.userId),
+          eq(request.status, "approved"),
         ),
-      );
+      columns: {
+        id: true,
+        requested_at: true,
+        processed_at: true,
+      },
+      with: {
+        record: {
+          columns: {
+            title: true,
+            description: true,
+            token_id: true,
+          },
+        },
+      },
+    });
 
-    return c.json({ data: requests }, 200);
+    return c.json({ data }, 200);
   })
   .get("/user", async (c) => {
     const auth = getAuth(c);
