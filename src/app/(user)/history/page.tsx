@@ -1,43 +1,8 @@
 import React from "react";
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-function ReadEventsTab() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Read Events</CardTitle>
-        <CardDescription>
-          A list of recent read events performed on your documents
-        </CardDescription>
-      </CardHeader>
-    </Card>
-  );
-}
-
-function WriteEventsTab() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Write Events</CardTitle>
-        <CardDescription>
-          A list of recent write events performed by you
-        </CardDescription>
-      </CardHeader>
-    </Card>
-  );
-}
+import ReadEventsCard from "@/components/read-events-tab";
+import WriteEventsCard from "@/components/write-events-tab";
 
 function HistoryPage() {
   return (
@@ -48,10 +13,10 @@ function HistoryPage() {
           <TabsTrigger value="write">Write Events</TabsTrigger>
         </TabsList>
         <TabsContent value="read">
-          <ReadEventsTab />
+          <ReadEventsCard />
         </TabsContent>
         <TabsContent value="write">
-          <WriteEventsTab />
+          <WriteEventsCard />
         </TabsContent>
       </Tabs>
     </div>

@@ -2,6 +2,7 @@ import React from "react";
 import PageFooter from "@/components/page-footer";
 import PageHeader from "@/components/page-header";
 import { ThirdwebProvider } from "thirdweb/react";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 interface ViewProps {
   children: React.ReactNode;
@@ -16,6 +17,7 @@ function UserViewLayout({ children }: ViewProps) {
         {children}
         <PageFooter />
       </ThirdwebProvider>
+      <ReactQueryDevtools />
     </div>
   );
 }

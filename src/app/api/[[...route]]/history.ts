@@ -32,7 +32,8 @@ const historyRouter = new Hono()
       .from(history)
       .where(
         and(eq(history.user_id, auth.userId), eq(history.event_type, "write")),
-      );
+      )
+      .limit(10);
 
     if (!writeEvents.length)
       return c.json({ error: "No write events found for user!" }, 404);
@@ -52,12 +53,85 @@ const historyRouter = new Hono()
       .from(history)
       .where(
         and(eq(history.user_id, auth.userId), eq(history.event_type, "read")),
-      );
+      )
+      .limit(10);
 
-    if (!readEvents.length)
-      return c.json({ error: "No write events found for user!" }, 404);
+    // if (!readEvents.length)
+    //   return c.json({ error: "No write events found for user!" }, 404);
 
     return c.json(readEvents, 200);
+  })
+  .get("/write/all", async (c) => {
+    const auth = getAuth(c);
+    if (!auth?.userId) return c.json({ error: "Unauthorized" }, 401);
+
+    const data = await db
+      .select({
+        id: history.id,
+        description: history.comments,
+        transaction_hash: history.transaction_hash,
+        performed_at: history.performed_at,
+      })
+      .from(history)
+      .where(eq(history.user_id, auth.userId));
+
+    return c.json(data, 200);
+  })
+  .get("/read/all", async (c) => {
+    const auth = getAuth(c);
+    if (!auth?.userId) return c.json({ error: "Unauthorized" }, 401);
+
+    const data = await db
+      .select({
+        id: history.id,
+        description: history.comments,
+        performed_at: history.performed_at,
+      })
+      .from(history)
+      .where(eq(history.user_id, auth.userId));
+
+    return c.json(data, 200);
+  })
+  .post("/write", zValidator("json", insertHistorySchema), async (c) => {
+    const auth = getAuth(c);
+    if (!auth?.userId) return c.json({ error: "Unauthorized" }, 401);
+
+    const data = c.req.valid("json");
+
+    const [newEvent] = await db
+      .insert(history)
+      .values({
+        event_type: "write",
+        comments: data.comments,
+        transaction_hash: data.transaction_hash,
+        user_id: auth.userId,
+      })
+      .returning();
+
+    if (!newEvent)
+      return c.json({ error: "Failed to create write event!" }, 500);
+
+    return c.json(newEvent, 201);
+  })
+  .post("/read", zValidator("json", insertHistorySchema), async (c) => {
+    const auth = getAuth(c);
+    if (!auth?.userId) return c.json({ error: "Unauthorized" }, 401);
+
+    const data = c.req.valid("json");
+
+    const [newEvent] = await db
+      .insert(history)
+      .values({
+        event_type: "read",
+        comments: data.comments,
+        user_id: auth.userId,
+      })
+      .returning();
+
+    if (!newEvent)
+      return c.json({ error: "Failed to create read event!" }, 500);
+
+    return c.json(newEvent, 201);
   });
 
 export default historyRouter;

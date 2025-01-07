@@ -96,7 +96,7 @@ export const history = pgTable("history", {
 export const insertHistorySchema = createInsertSchema(history, {
   performed_at: z.coerce.date(),
 })
-  .omit({ id: true, performed_at: true })
+  .omit({ id: true, performed_at: true, user_id: true })
   .superRefine((input, ctx) => {
     if (input.event_type === "write" && !input.transaction_hash) {
       ctx.addIssue({

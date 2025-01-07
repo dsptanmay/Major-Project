@@ -1,10 +1,12 @@
 "use client";
+import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import React, { useRef, useState } from "react";
 
+import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import AlertCard from "@/components/alert-card";
 import LoadingStateComponent from "@/components/loading-card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 import { client } from "@/app/client";
 import { resolveScheme } from "thirdweb/storage";
@@ -13,8 +15,7 @@ import { useActiveAccount } from "thirdweb/react";
 import { useGetIpfs } from "@/hooks/use-ipfs";
 import { useGetRecord } from "@/hooks/medical-records/use-get-record";
 import { useHasAccess } from "@/hooks/access-requests/use-check-access";
-import AlertCard from "@/components/alert-card";
-import { AlertCircle } from "lucide-react";
+import { useCreateReadEvent } from "@/hooks/history/use-create-read-event";
 
 function TestUserView({ params }: { params: { token_id: string } }) {
   const [pdfUrl, setPdfUrl] = useState<string | undefined>(undefined);
@@ -22,6 +23,7 @@ function TestUserView({ params }: { params: { token_id: string } }) {
   const [isDecrypting, setIsDecrypting] = useState<boolean>(false);
 
   const router = useRouter();
+  const { user } = useUser();
   const activeAccount = useActiveAccount();
 
   const ipfsQuery = useGetIpfs(activeAccount?.address, params.token_id);
@@ -33,6 +35,8 @@ function TestUserView({ params }: { params: { token_id: string } }) {
     params.token_id,
     hasAccess,
   );
+
+  const { mutate: createEvent } = useCreateReadEvent();
 
   const pdfViewerRef = useRef<HTMLIFrameElement>(null);
 
@@ -104,6 +108,10 @@ function TestUserView({ params }: { params: { token_id: string } }) {
       .then((result) => {
         setDocumentName(result.original_name);
         setPdfUrl(result.pdf_url);
+        createEvent({
+          event_type: "read",
+          comments: `User ${user?.username} (${user?.publicMetadata.role}) viewed document with Token ID ${params.token_id}`,
+        });
       })
       .catch((err) => {
         console.error(err);
