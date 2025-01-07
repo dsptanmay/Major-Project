@@ -35,9 +35,6 @@ const historyRouter = new Hono()
       )
       .limit(10);
 
-    if (!writeEvents.length)
-      return c.json({ error: "No write events found for user!" }, 404);
-
     return c.json(writeEvents, 200);
   })
   .get("/read", async (c) => {
@@ -55,9 +52,6 @@ const historyRouter = new Hono()
         and(eq(history.user_id, auth.userId), eq(history.event_type, "read")),
       )
       .limit(10);
-
-    // if (!readEvents.length)
-    //   return c.json({ error: "No write events found for user!" }, 404);
 
     return c.json(readEvents, 200);
   })
