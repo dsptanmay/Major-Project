@@ -74,7 +74,6 @@ function DataTable({
         });
         createEvent({
           comments: `Granted access to ${notification.org_username} for document with Token ID ${notification.token_id}`,
-          event_type: "write",
           transaction_hash: result.transactionHash,
         });
         toast({ title: "Success", description: `${result.transactionHash}` });

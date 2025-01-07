@@ -87,7 +87,6 @@ function AccessControlPage() {
           deleteRequest({ param: { id: request.id } });
           createEvent({
             comments: `Revoked access from ${request.org_username} for Document with Token ID ${request.token_id}`,
-            event_type: "write",
             transaction_hash: result.transactionHash,
           });
         })
