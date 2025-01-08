@@ -6,13 +6,8 @@ import {
 import { zValidator } from "@hono/zod-validator";
 
 import { db } from "@/db/drizzle";
-import { and, eq, inArray } from "drizzle-orm";
-import {
-  accessRequests,
-  medicalRecords,
-  notifications,
-  users,
-} from "@/db/schema";
+import { and, eq } from "drizzle-orm";
+import { accessRequests, notifications } from "@/db/schema";
 
 import { z } from "zod";
 
@@ -62,29 +57,33 @@ const accessRequestsRouter = new Hono()
 
     const recordIds = userRecords.map((record) => record.id);
 
-    const approvedRequests = await db
-      .select({
-        id: accessRequests.id,
-        title: medicalRecords.title,
-        token_id: medicalRecords.token_id,
-        processed_at: accessRequests.processed_at,
-        org_username: users.username,
-        org_wallet_address: users.wallet_address,
-      })
-      .from(accessRequests)
-      .innerJoin(
-        medicalRecords,
-        eq(accessRequests.record_id, medicalRecords.id),
-      )
-      .innerJoin(users, eq(accessRequests.organization_id, users.id))
-      .where(
+    const data = await db.query.accessRequests.findMany({
+      where: (request, { eq, and, inArray }) =>
         and(
-          inArray(accessRequests.record_id, recordIds),
+          inArray(request.record_id, recordIds),
           eq(accessRequests.status, "approved"),
         ),
-      );
+      columns: {
+        id: true,
+        processed_at: true,
+      },
+      with: {
+        record: {
+          columns: {
+            title: true,
+            token_id: true,
+          },
+        },
+        organization: {
+          columns: {
+            username: true,
+            wallet_address: true,
+          },
+        },
+      },
+    });
 
-    return c.json({ data: approvedRequests });
+    return c.json({ data });
   })
   .post(
     "/",

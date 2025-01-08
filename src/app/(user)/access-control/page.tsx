@@ -75,18 +75,18 @@ function AccessControlPage() {
     try {
       const transaction = revokeAccess({
         contract,
-        tokenId: BigInt(request.token_id),
-        user: request.org_wallet_address,
+        tokenId: BigInt(request.record.token_id),
+        user: request.organization.wallet_address,
       });
       sendTransaction(transaction)
         .then((result) => {
           toast({
             title: "Success",
-            description: `${result.transactionHash} for ${request.token_id}`,
+            description: `${result.transactionHash} for ${request.record.token_id}`,
           });
           deleteRequest({ param: { id: request.id } });
           createEvent({
-            comments: `Revoked access from ${request.org_username} for Document with Token ID ${request.token_id}`,
+            comments: `Revoked access from ${request.organization.username} for Document with Token ID ${request.record.token_id}`,
             transaction_hash: result.transactionHash,
           });
         })
@@ -126,10 +126,14 @@ function AccessControlPage() {
         <TableBody>
           {requests.map((request) => (
             <TableRow key={request.id}>
-              <TableCell>{request.org_username}</TableCell>
-              <TableCell>{request.org_wallet_address}</TableCell>
-              <TableCell className="text-center">{request.token_id}</TableCell>
-              <TableCell className="text-center">{request.title}</TableCell>
+              <TableCell>{request.organization.username}</TableCell>
+              <TableCell>{request.organization.wallet_address}</TableCell>
+              <TableCell className="text-center">
+                {request.record.token_id}
+              </TableCell>
+              <TableCell className="text-center">
+                {request.record.title}
+              </TableCell>
               <TableCell className="text-center">
                 {request.processed_at === null
                   ? "Unprocessed"
