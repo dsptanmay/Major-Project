@@ -27,7 +27,7 @@ function GrantedRecordsPage() {
   const { user } = useUser();
 
   const {
-    data: orgRequests,
+    data: grantedRecords,
     status,
     error,
   } = useGetOrgRequests(user?.id, activeAccount?.address);
@@ -45,7 +45,7 @@ function GrantedRecordsPage() {
         icon={<AlertCircle />}
       />
     );
-  if (orgRequests.length === 0)
+  if (grantedRecords.length === 0)
     return (
       <AlertCard
         icon={<InfoIcon />}
@@ -64,21 +64,21 @@ function GrantedRecordsPage() {
         </code>
       </h2>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {orgRequests.map((record) => (
-          <Card key={record.id} className="bg-[#fff4e0]">
+        {grantedRecords.map((data) => (
+          <Card key={data.id} className="bg-[#fff4e0]">
             <CardHeader>
-              <CardTitle className="text-gray-800">{record.title}</CardTitle>
-              <CardDescription>{record.description}</CardDescription>
+              <CardTitle className="text-gray-800">
+                {data.record.title}
+              </CardTitle>
+              <CardDescription>{data.record.description}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col space-y-5">
               <div className="flex justify-between text-sm font-base">
-                <h1>
-                  {format(new Date(record.processed_at!), "dd MMM, yyyy")}
-                </h1>
-                <p>&#35;{record.token_id}</p>
+                <h1>{format(new Date(data.processed_at!), "dd MMM, yyyy")}</h1>
+                <p>&#35;{data.record.token_id}</p>
               </div>
               <Link
-                href={`/view/${record.token_id}`}
+                href={`/view/${data.record.token_id}`}
                 prefetch={true}
                 className="w-full"
               >

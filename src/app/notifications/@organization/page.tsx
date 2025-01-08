@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 
 import {
   Table,
@@ -16,23 +17,18 @@ import { Button } from "@/components/ui/button";
 import LoadingStateComponent from "@/components/loading-card";
 import MissingWalletComponent from "@/components/missing-wallet";
 
+import { useToast } from "@/hooks/use-toast";
 import { useActiveAccount } from "thirdweb/react";
 
-import { useGetOrgNotifications } from "@/hooks/notifications/use-get-notifications";
+import {
+  type OrgNotifications,
+  useGetOrgNotifications,
+} from "@/hooks/notifications/use-get-notifications";
 import { useDeleteNotification } from "@/hooks/notifications/use-delete-notification";
-import { useToast } from "@/hooks/use-toast";
+
 import { useDeleteRequest } from "@/hooks/access-requests/use-delete-org-request";
-import { useRouter } from "next/navigation";
 
-type Notification = {
-  id: string;
-  message: string;
-  status: "pending" | "approved" | "denied";
-  token_id: string;
-  record_title: string;
-};
-
-const StatusBadge: React.FC<{ status: Notification["status"] }> = ({
+const StatusBadge: React.FC<{ status: "approved" | "pending" | "denied" }> = ({
   status,
 }) => {
   const statusStyles = {
@@ -53,7 +49,7 @@ const StatusBadge: React.FC<{ status: Notification["status"] }> = ({
   );
 };
 
-function DataTable({ data }: { data: Notification[] }) {
+function DataTable({ data }: { data: OrgNotifications }) {
   const { toast } = useToast();
   const { user } = useUser();
   const { mutate: deleteNotification, status: notifStatus } =
@@ -63,11 +59,11 @@ function DataTable({ data }: { data: Notification[] }) {
 
   const isPending = notifStatus === "pending" || reqStatus === "pending";
 
-  const handleDelete = (notification: Notification) => {
+  const handleDelete = (notification: OrgNotifications[0]) => {
     try {
       deleteNotification({ param: { id: notification.id } });
       deleteRequest({
-        query: { org_id: user?.id, token_id: notification.token_id },
+        query: { org_id: user?.id, token_id: notification.record.token_id },
       });
     } catch (error) {
       console.error(error);
@@ -90,9 +86,9 @@ function DataTable({ data }: { data: Notification[] }) {
       <TableBody>
         {data.map((notification) => (
           <TableRow key={notification.id}>
-            <TableCell>{notification.record_title}</TableCell>
+            <TableCell>{notification.record.title}</TableCell>
             <TableCell className="flex justify-center">
-              {notification.token_id}
+              {notification.record.title}
             </TableCell>
             <TableCell>{notification.message}</TableCell>
             <TableCell className="flex justify-center">
@@ -104,7 +100,7 @@ function DataTable({ data }: { data: Notification[] }) {
                   className="bg-[#fa9e53]"
                   variant="noShadow"
                   onClick={() => {
-                    router.push(`/view/${notification.token_id}`);
+                    router.push(`/view/${notification.record.token_id}`);
                   }}
                 >
                   View Document
@@ -131,7 +127,7 @@ function DataTable({ data }: { data: Notification[] }) {
   );
 }
 
-function OrgNotifications() {
+function OrgNotificationsPage() {
   const { user } = useUser();
   const activeAccount = useActiveAccount();
 
@@ -157,4 +153,4 @@ function OrgNotifications() {
   );
 }
 
-export default OrgNotifications;
+export default OrgNotificationsPage;
