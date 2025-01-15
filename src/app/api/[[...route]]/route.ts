@@ -10,7 +10,7 @@ import historyRouter from "./history";
 
 // export const runtime = "edge";
 
-const app = new Hono().basePath("/api").use("*", logger());
+const app = new Hono().basePath("/api").use(logger());
 
 const routes = app
   .route("/users", usersRouter)
