@@ -1,0 +1,13 @@
+main: Landing Page {link: https://nft-based-health-records.tech}
+
+sign_in: Sign In \n(/sign-in)
+sign_up: Sign Up \n(/sign-up)
+role_select: Role Select \n(/role-select)
+dashboard: Dashboard \n(/dashboard)
+
+main -> sign_in
+sign_in -> dashboard: Member has a role
+sign_in -> role_select: Member does not have a role
+main -> sign_up
+
+sign_up -> role_select -> dashboard

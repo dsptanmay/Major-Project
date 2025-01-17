@@ -7,14 +7,12 @@ import notificationsRouter from "./notifications";
 import medicalRecordsRouter from "./medical-records";
 import accessRequestsRouter from "./access-requests";
 import historyRouter from "./history";
-import testRouter from "./test";
 
 // export const runtime = "edge";
 
-const app = new Hono().basePath("/api").use("*", logger());
+const app = new Hono().basePath("/api").use(logger());
 
 const routes = app
-  .route("/test", testRouter)
   .route("/users", usersRouter)
   .route("/history", historyRouter)
   .route("/notifications", notificationsRouter)

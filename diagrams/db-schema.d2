@@ -1,0 +1,97 @@
+direction: right
+# Enum definitions
+user_role_enum: User Roles {
+  shape: class
+  style.multiple: true
+  "user"
+  "medical_organization"
+}
+
+access_status_enum: Access Statuses {
+  shape: class
+  style.multiple: true
+  "pending"
+  "approved"
+  "denied"
+}
+
+notif_status_enum: Notification Statuses {
+  shape: class
+  style.multiple: true
+  "pending"
+  "approved"
+  "denied"
+}
+
+history_event_enum: Event Types {
+  shape: class
+  style.multiple: true
+  "write"
+  "read"
+}
+
+# Tables
+users: {
+  shape: sql_table
+  id: text {constraint: primary_key}
+  wallet_address: text {constraint: unique}
+  role: user_role
+  username: text {constraint: unique}
+  created_at: timestamp
+}
+
+medical_records: medical records {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  user_id: text {constraint: foreign_key}
+  token_id: text {constraint: unique}
+  encryption_key: text
+  title: text
+  description: text
+  uploaded_at: timestamp
+}
+
+access_requests: access requests {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  record_id: uuid {constraint: foreign_key}
+  status: access_status
+  organization_id: text {constraint: foreign_key}
+  requested_at: timestamp
+  processed_at: timestamp
+}
+
+notifications: {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  record_id: uuid {constraint: foreign_key}
+  status: notif_status
+  org_id: text {constraint: foreign_key}
+  user_id: text {constraint: foreign_key}
+  message: text
+  created_at: timestamp
+}
+
+history: {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  user_id: text {constraint: foreign_key}
+  event_type: history_event
+  transaction_hash: text
+  comments: text
+  performed_at: timestamp
+}
+
+# Relationships
+users -> medical_records: has many
+users -> access_requests: has many as org
+users -> notifications: has many
+users -> history: has many
+
+medical_records -> access_requests: has many
+medical_records -> notifications: has many
+
+users.role -> user_role_enum: type
+access_requests.status -> access_status_enum: type
+notifications.status -> notif_status_enum: type
+history.event_type -> history_event_enum: type
