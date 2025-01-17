@@ -1,0 +1,17 @@
+# direction: right
+upload: Upload Page\n(/upload)
+add_file: Add a PDF File
+database: DB {
+  shape: cylinder
+}
+uploadProcess: Upload to IPFS {
+  shape: diamond
+}
+mintNFT: Mint the NFT {
+  shape: diamond
+}
+
+upload -> add_file
+add_file -> uploadProcess: Encrypt the PDF\n(AES-256)
+uploadProcess -> database: Add record to the database
+uploadProcess -> mintNFT

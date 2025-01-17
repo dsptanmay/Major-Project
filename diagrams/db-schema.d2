@@ -1,13 +1,13 @@
 direction: right
 # Enum definitions
-user_role_enum: {
+user_role_enum: User Roles {
   shape: class
   style.multiple: true
   "user"
   "medical_organization"
 }
 
-access_status_enum: {
+access_status_enum: Access Statuses {
   shape: class
   style.multiple: true
   "pending"
@@ -15,7 +15,7 @@ access_status_enum: {
   "denied"
 }
 
-notif_status_enum: {
+notif_status_enum: Notification Statuses {
   shape: class
   style.multiple: true
   "pending"
@@ -23,7 +23,7 @@ notif_status_enum: {
   "denied"
 }
 
-history_event_enum: {
+history_event_enum: Event Types {
   shape: class
   style.multiple: true
   "write"
@@ -40,7 +40,7 @@ users: {
   created_at: timestamp
 }
 
-medical_records: {
+medical_records: medical records {
   shape: sql_table
   id: uuid {constraint: primary_key}
   user_id: text {constraint: foreign_key}
@@ -51,7 +51,7 @@ medical_records: {
   uploaded_at: timestamp
 }
 
-access_requests: {
+access_requests: access requests {
   shape: sql_table
   id: uuid {constraint: primary_key}
   record_id: uuid {constraint: foreign_key}
