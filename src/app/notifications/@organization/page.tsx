@@ -88,13 +88,13 @@ function DataTable({ data }: { data: OrgNotifications }) {
           <TableRow key={notification.id}>
             <TableCell>{notification.record.title}</TableCell>
             <TableCell className="flex justify-center">
-              {notification.record.title}
+              {notification.record.token_id}
             </TableCell>
             <TableCell>{notification.message}</TableCell>
             <TableCell className="flex justify-center">
               <StatusBadge status={notification.status} key={notification.id} />
             </TableCell>
-            <TableCell className="text-center">
+            <TableCell className="flex flex-col items-center text-center">
               {notification.status === "approved" && (
                 <Button
                   className="bg-[#fa9e53]"

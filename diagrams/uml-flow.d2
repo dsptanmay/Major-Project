@@ -1,0 +1,63 @@
+shape: sequence_diagram
+
+User -> Portal: Sign Up {
+  style: {
+    bold: true
+  }
+}
+Organization -> Portal: Sign Up {
+  style: {
+    bold: true
+  }
+}
+User -> Portal: Upload PDF {
+  style: {
+    bold: true
+  }
+}
+Portal -> IPFS: Upload encrypted PDF\n(JSON) {
+  style: {
+    bold: true
+  }
+}
+Portal -> Blockchain: Mint NFT\n(Add to User wallet) {
+  style: {
+    bold: true
+  }
+}
+Organization -> Portal: Request Access\nfor record {
+  style: {
+    bold: true
+  }
+}
+User -> Portal: Grant/Deny\nrequest access {
+  style: {
+    bold: true
+  }
+}
+Portal -> Blockchain: Grant Access\n(contract call) {
+  style: {
+    bold: true
+  }
+}
+Organization -> Portal: View granted\nrecords {
+  style: {
+    bold: true
+  }
+}
+User -> Portal: Revoke access\nfor granted documents {
+  style: {
+    bold: true
+  }
+}
+Portal -> Blockchain: Revoke Access\n(contract call) {
+  style: {
+    bold: true
+  }
+}
+
+User -> Portal: View History {
+  style: {
+    bold: true
+  }
+}
